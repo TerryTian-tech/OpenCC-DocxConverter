@@ -1,0 +1,2 @@
+# OpenCC-DocxConverter
+基于OpenCC的DOCX文档和TXT文件的繁简转换工具
