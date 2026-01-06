@@ -3,7 +3,7 @@
 ## 介绍
 本工具是基于[OpenCC](https://github.com/BYVoid/OpenCC)、[Python-docx](https://github.com/python-openxml/python-docx)封装的文本文件转换工具，支持中文简、繁体之间词汇级别的转换，同时还支持地域间异体字以及词汇的转换。
 
-如需转换后的繁体字符合《通用规范汉字表》(2013)的“附件一”的规定，请[移步](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)
+如需转换后的繁体字符合《通用规范汉字表》(2013)的“附件1”的规定，请[移步](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)
 
 ## 功能特性
 - 支持DOCX文档、TXT文件的中文繁、简转换
