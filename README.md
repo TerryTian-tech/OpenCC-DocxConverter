@@ -16,11 +16,11 @@
 
 - 支持转换DOCX文档中的脚注和尾注文本
 
-## 使用说明
+## 使用方式
 ### 1.下载发行版（Windows 10/11）
 直接下载[Releases](https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases)中的压缩包，解压并运行。
 
-### 2.从源码编译运行（Windows/MacOS/Linux）
+### 2.从源码运行（Windows/MacOS/Linux）
 #### 克隆这个仓库
 ```bash
 git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
