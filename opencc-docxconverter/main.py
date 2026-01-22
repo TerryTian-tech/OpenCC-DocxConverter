@@ -1399,7 +1399,7 @@ class ModernUI(QMainWindow):
         
         # 描述区域
         desc_label = QLabel("""
-        <h2>OpenCC-文本文件繁简转换工具 V1.0.0</h2>
+        <h2>OpenCC-文本文件繁简转换工具 V1.0.1</h2>
         <p>专业的中文繁、简转换工具，助您转换DOCX文档和TXT文件中的繁、简字形。</p>
         <p><b>主要特性:</b></p>
         <ul>
@@ -1415,7 +1415,7 @@ class ModernUI(QMainWindow):
               <p>Python-docx：https://github.com/python-openxml/python-docx
               <p>Chardet：https://github.com/chardet/chardet
         </ul>
-        <p><b>本软件封装的OpenCC版本为1.1.9，Python-docx版本为1.2.0。</p>
+        <p><b>本软件封装的OpenCC版本为1.2.0，Python-docx版本为1.2.0。</p>
         <p><b>本软件遵循Apache-2.0开源协议发布。</p>
         """)
         desc_label.setWordWrap(True)
