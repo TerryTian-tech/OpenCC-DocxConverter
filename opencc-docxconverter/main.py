@@ -7,14 +7,13 @@ import chardet
 import zipfile
 import xml.etree.ElementTree as ET
 
-
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTextEdit, QFileDialog, QLabel, QProgressBar,
                              QMessageBox, QGroupBox, QComboBox, QCheckBox, QLineEdit,
-                             QStyleFactory, QTabWidget, QListWidget, QSplitter, QMenuBar,
-                             QMenu, QAction, QActionGroup, QRadioButton, QButtonGroup)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSettings
-from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor, QPalette
+                             QStyleFactory,QTabWidget, QListWidget, QSplitter, QMenuBar,
+                             QMenu, QRadioButton, QButtonGroup)
+from PySide6.QtCore import Qt, QThread, Signal, QSettings
+from PySide6.QtGui import QIcon, QFont, QPixmap, QColor, QPalette, QAction, QActionGroup
 
 from docx import Document
 from opencc import OpenCC
@@ -30,9 +29,9 @@ class ConversionWorker(QThread):
     """
     转换工作线程，避免UI阻塞
     """
-    progress_updated = pyqtSignal(int, str)  # 进度信号
-    conversion_finished = pyqtSignal(bool, str)  # 完成信号
-    log_message = pyqtSignal(str)  # 日志消息信号
+    progress_updated = Signal(int, str)  # 进度信号
+    conversion_finished = Signal(bool, str)  # 完成信号
+    log_message = Signal(str)  # 日志消息信号
     
     def __init__(self, input_path, output_folder, conversion_type='s2t', preserve_format=True, 
                  convert_footnotes=True):
@@ -1399,7 +1398,7 @@ class ModernUI(QMainWindow):
         
         # 描述区域
         desc_label = QLabel("""
-        <h2>OpenCC-文本文件繁简转换工具 V1.0.1</h2>
+        <h2>OpenCC-文本文件繁简转换工具 V1.0.2</h2>
         <p>专业的中文繁、简转换工具，助您转换DOCX文档和TXT文件中的繁、简字形。</p>
         <p><b>主要特性:</b></p>
         <ul>
@@ -1436,14 +1435,14 @@ class ModernUI(QMainWindow):
             QMessageBox.Question,
             "选择类型",
             "批量转换同一目录下所有文档请选择文件夹，转换单个文档请选择文件。",
-            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
             self
         )
 
         # 修改按钮文本
-        yes_button = msg_box.button(QMessageBox.Yes)
-        no_button = msg_box.button(QMessageBox.No)
-        cancel_button = msg_box.button(QMessageBox.Cancel)
+        yes_button = msg_box.button(QMessageBox.StandardButton.Yes)
+        no_button = msg_box.button(QMessageBox.StandardButton.No)
+        cancel_button = msg_box.button(QMessageBox.StandardButton.Cancel)
         yes_button.setText("选择文件夹")
         no_button.setText("选择文件")
         cancel_button.setText("取消")
@@ -1451,11 +1450,11 @@ class ModernUI(QMainWindow):
         # 显示对话框并等待用户选择
         choice = msg_box.exec_()
     
-        if choice == QMessageBox.Yes:  # 文件夹
+        if choice == QMessageBox.StandardButton.Yes:  # 文件夹
             path = QFileDialog.getExistingDirectory(self, "选择输入文件夹")
             if path:
                 self.input_edit.setText(path)
-        elif choice == QMessageBox.No:  # 文件
+        elif choice == QMessageBox.StandardButton.No:  # 文件
             paths, _ = QFileDialog.getOpenFileNames(
                 self, "选择文件", "", 
                 "文档文件 (*.docx *.txt);;所有文件 (*)"
@@ -1595,7 +1594,7 @@ def main():
     
     window = ModernUI()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     main()
