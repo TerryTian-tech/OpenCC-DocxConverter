@@ -1398,7 +1398,7 @@ class ModernUI(QMainWindow):
         
         # 描述区域
         desc_label = QLabel("""
-        <h2>OpenCC-文本文件繁简转换工具 V1.0.2</h2>
+        <h2>OpenCC-文本文件繁简转换工具 V1.0.3</h2>
         <p>专业的中文繁、简转换工具，助您转换DOCX文档和TXT文件中的繁、简字形。</p>
         <p><b>主要特性:</b></p>
         <ul>
