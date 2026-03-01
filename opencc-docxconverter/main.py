@@ -2,15 +2,17 @@ import os
 import sys
 import tempfile
 import shutil
-import codecs
 import chardet
 import zipfile
 import xml.etree.ElementTree as ET
+import urllib.request
+import urllib.error
+import json
 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTextEdit, QFileDialog, QLabel, QProgressBar,
                              QMessageBox, QGroupBox, QComboBox, QCheckBox, QLineEdit,
-                             QStyleFactory,QTabWidget, QListWidget, QSplitter, QMenuBar,
+                             QStyleFactory, QTabWidget, QListWidget, QSplitter, QMenuBar,
                              QMenu, QRadioButton, QButtonGroup)
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import QIcon, QFont, QPixmap, QColor, QPalette, QAction, QActionGroup
@@ -23,6 +25,50 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 import re
+
+
+# 版本常量
+VERSION = "1.0.4"
+
+
+# 更新检查线程
+class UpdateChecker(QThread):
+    update_checked = Signal(bool, str, str)  # (有新版本?, 新版本号, 下载页面URL)
+
+    def run(self):
+        try:
+            url = "https://api.github.com/repos/TerryTian-tech/OpenCC-DocxConverter/releases/latest"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                latest_tag = data.get('tag_name', '')
+                
+                # 使用正则提取版本号（从 "Transformer(1.2.4)" 中提取 "1.2.4"）
+                import re
+                match = re.search(r'(\d+\.\d+\.\d+)', latest_tag)
+                if match:
+                    latest_version = match.group(1)
+                else:
+                    # 如果标签格式不符合预期，仍使用原字符串，但后续比较会失败
+                    latest_version = latest_tag
+
+                download_url = data.get('html_url', 'https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases/latest')
+
+                # 当前版本（已在程序开头定义）
+                current_parts = [int(x) for x in VERSION.split('.')]
+                try:
+                    latest_parts = [int(x) for x in latest_version.split('.')]
+                except ValueError:
+                    # 提取到的版本号格式不正确，认为检查失败
+                    self.update_checked.emit(False, '', f"无法解析最新版本号：{latest_version}")
+                    return
+
+                # 版本比较
+                has_new = latest_parts > current_parts
+                self.update_checked.emit(has_new, latest_version, download_url)
+
+        except Exception as e:
+            self.update_checked.emit(False, '', f"检查失败：{str(e)}")
 
 
 class ConversionWorker(QThread):
@@ -119,19 +165,19 @@ class ConversionWorker(QThread):
         # 优先尝试GB18030，因为它兼容GB2312和GBK
         if encoding.lower() in ['gb2312', 'gbk']:
             try:
-                with codecs.open(file_path, 'r', encoding='gb18030', errors='strict') as f:
+                with open(file_path, 'r', encoding='gb18030', errors='strict') as f:
                     return f.read()
             except UnicodeDecodeError as e:
                 self.log_message.emit(f"GB18030严格模式读取失败: {e}，尝试原编码")
         
         try:
-            with codecs.open(file_path, 'r', encoding=encoding, errors='strict') as f:
+            with open(file_path, 'r', encoding=encoding, errors='strict') as f:
                 return f.read()
         except UnicodeDecodeError:
             # 如果严格模式失败，尝试使用errors='ignore'
             self.log_message.emit(f"使用严格模式读取失败，尝试忽略错误字符")
             try:
-                with codecs.open(file_path, 'r', encoding=encoding, errors='ignore') as f:
+                with open(file_path, 'r', encoding=encoding, errors='ignore') as f:
                     content = f.read()
                     # 检查读取的内容是否包含有效的中文字符
                     if any('\u4e00' <= char <= '\u9fff' for char in content):
@@ -139,13 +185,13 @@ class ConversionWorker(QThread):
                     else:
                         # 如果没有中文字符，可能是编码错误，尝试GB18030
                         self.log_message.emit("读取内容不包含中文字符，尝试GB18030编码")
-                        with codecs.open(file_path, 'r', encoding='gb18030', errors='ignore') as f2:
+                        with open(file_path, 'r', encoding='gb18030', errors='ignore') as f2:
                             return f2.read()
             except Exception as e:
                 self.log_message.emit(f"读取文件时发生错误: {e}")
                 # 最后尝试使用GB18030
                 try:
-                    with codecs.open(file_path, 'r', encoding='gb18030', errors='ignore') as f:
+                    with open(file_path, 'r', encoding='gb18030', errors='ignore') as f:
                         return f.read()
                 except Exception as e2:
                     self.log_message.emit(f"最终读取失败: {e2}")
@@ -205,7 +251,7 @@ class ConversionWorker(QThread):
             output_filename = f"convert_{os.path.basename(input_path)}"
             output_path = os.path.join(output_folder, output_filename)
             
-            with codecs.open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(converted_content)
             
             self.log_message.emit(f"已保存: {output_path}")
@@ -219,8 +265,10 @@ class ConversionWorker(QThread):
         def __init__(self, worker, config='s2t'):
             """
             初始化转换器
-            -'s2t': 简体到繁体
-            -'t2s': 繁体到简体
+            -'s2t': 简体到繁体（OpenCC标准）
+            -'t2s': 繁体（OpenCC标准）到简体
+            -'s2tg': 简体到繁体（《通用规范汉字表》标准）
+            -'tg2s': 繁体（《通用规范汉字表》标准）到简体
             -'s2tw': 简体到台湾正体
             -'tw2s': 台湾正体到简体
             -'s2hk': 简体到香港繁体
@@ -230,6 +278,7 @@ class ConversionWorker(QThread):
             -'t2tw': 繁体（OpenCC标准）到台湾正体
             -'hk2t': 香港繁体到繁体（OpenCC 标准）
             -'t2hk': 繁体（OpenCC标准）到香港繁体
+            -'t2gov': 繁体到繁体（《通用规范汉字表》标准）
             -'t2jp': 繁体（OpenCC标准，旧字体）到日文新字体
             -'jp2t': 日文新字体到繁体（OpenCC标准，旧字体）
             -'tw2t': 台湾正体到繁体（OpenCC标准）
@@ -696,7 +745,7 @@ class ConversionWorker(QThread):
                 else:
                     return False
             else:
-                self.log_message.emit("错误：不支持的文件格式，仅支持docx和txt文件")
+                self.log_message.emit("错误：不支持的文件格式，仅支持docx、txt文件")
                 return False
         
         # 处理文件夹
@@ -1313,8 +1362,10 @@ class ModernUI(QMainWindow):
         type_layout.setSpacing(8)
         type_layout.addWidget(QLabel("转换类型:"))
         self.type_combo = QComboBox()
-        self.type_combo.addItem("简体到繁体")
-        self.type_combo.addItem("繁体到简体")
+        self.type_combo.addItem("简体到繁体（OpenCC标准）")
+        self.type_combo.addItem("繁体（OpenCC标准）到简体")
+        self.type_combo.addItem("简体到繁体（《通用规范汉字表》标准）")
+        self.type_combo.addItem("繁体（《通用规范汉字表》标准）到简体")
         self.type_combo.addItem("简体到台湾正体")
         self.type_combo.addItem("台湾正体到简体")
         self.type_combo.addItem("简体到香港繁体")
@@ -1324,6 +1375,7 @@ class ModernUI(QMainWindow):
         self.type_combo.addItem("繁体（OpenCC标准）到台湾正体")
         self.type_combo.addItem("香港繁体到繁体（OpenCC标准）")
         self.type_combo.addItem("繁体（OpenCC标准）到香港繁体")
+        self.type_combo.addItem("繁体到繁体（《通用规范汉字表》标准）")
         self.type_combo.addItem("繁体（OpenCC标准，旧字体）到日文新字体")
         self.type_combo.addItem("日文新字体到繁体（OpenCC标准，旧字体）")
         self.type_combo.addItem("台湾正体到繁体（OpenCC标准）")
@@ -1397,12 +1449,12 @@ class ModernUI(QMainWindow):
         layout.setContentsMargins(15, 15, 15, 15)
         
         # 描述区域
-        desc_label = QLabel("""
-        <h2>OpenCC-文本文件繁简转换工具 V1.0.3</h2>
-        <p>专业的中文繁、简转换工具，助您转换DOCX文档和TXT文件中的繁、简字形。</p>
+        desc_label = QLabel(f"""
+        <h2>OpenCC-文本文件繁简转换工具 V{VERSION}</h2>
+        <p>专业的中文繁、简转换工具，助您转换文本文件中的繁、简字形。</p>
         <p><b>主要特性:</b></p>
         <ul>
-            <li>支持DOCX文档、TXT文件中文繁、简转换</li>
+            <li>支持DOCX文档、TXT文本文件的中文繁、简转换</li>
             <li>自动检测并转写TXT文件为UTF-8编码，以兼容OpenCC转换</li>
             <li>转换后默认保留DOCX文档格式、排版不变</li>
             <li>支持批量处理文件转换</li>
@@ -1420,9 +1472,41 @@ class ModernUI(QMainWindow):
         desc_label.setWordWrap(True)
         desc_label.setAlignment(Qt.AlignLeft)
         layout.addWidget(desc_label)
+        check_update_btn = QPushButton("检查更新")
+        check_update_btn.setObjectName("browseButton")
+        check_update_btn.clicked.connect(self.check_for_updates)
+        layout.addWidget(check_update_btn, alignment=Qt.AlignCenter)
         
         layout.addStretch()
         return tab
+    
+    # 检查更新方法
+    def check_for_updates(self):
+        """检查是否有新版本"""
+        self.statusBar().showMessage("正在检查更新...")
+        self.update_checker = UpdateChecker()
+        self.update_checker.update_checked.connect(self.on_update_checked)
+        self.update_checker.start()
+    
+    # 处理更新检查结果
+    def on_update_checked(self, has_new, latest_version, url):
+        if has_new:
+            reply = QMessageBox.question(
+                self,
+                "发现新版本",
+                f"当前版本：{VERSION}\n最新版本：{latest_version}\n\n是否前往下载页面？",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+            if reply == QMessageBox.Yes:
+                import webbrowser
+                webbrowser.open(url)
+        elif latest_version == '' and '失败' in url:
+            # 错误情况
+            QMessageBox.warning(self, "检查更新失败", url)
+        else:
+            QMessageBox.information(self, "检查更新", f"当前已是最新版本{VERSION}。")
+        self.statusBar().showMessage("就绪")
         
     def browse_input(self):
         """浏览输入路径"""
@@ -1488,8 +1572,10 @@ class ModernUI(QMainWindow):
             
         # 获取转换类型
         conversion_types = {
-            "简体到繁体": "s2t",
-            "繁体到简体": "t2s",
+            "简体到繁体（OpenCC标准）": "s2t",
+            "繁体（OpenCC标准）到简体": "t2s",
+            "简体到繁体（《通用规范汉字表》标准）": "s2tg",
+            "繁体（《通用规范汉字表》标准）到简体": "tg2s",
             "简体到台湾正体": "s2tw",
             "台湾正体到简体": "tw2s",
             "简体到香港繁体": "s2hk",
@@ -1499,6 +1585,7 @@ class ModernUI(QMainWindow):
             "繁体（OpenCC标准）到台湾正体": "t2tw",
             "香港繁体到繁体（OpenCC标准）": "hk2t",
             "繁体（OpenCC标准）到香港繁体": "t2hk",
+            "繁体到繁体（《通用规范汉字表》标准）": "t2gov",
             "繁体（OpenCC标准，旧字体）到日文新字体": "t2jp",
             "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t",
             "台湾正体到繁体（OpenCC标准）": "tw2t"
