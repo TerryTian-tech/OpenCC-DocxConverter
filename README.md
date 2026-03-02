@@ -21,6 +21,8 @@
 直接下载[Releases](https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases)中的压缩包，解压并运行。
 
 ### 2.从源码运行（Windows/MacOS/Linux）
+> [!NOTE]
+> 如果需要使用《通用规范汉字表》相关的转换选项，需要下载[OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)的转换词典和json方案文件，并重命名词典文件和json文件，json文件重命名后的具体名称请参看程序源码的调用选项；重命名后放入OpenCC储存转换方案的目录下（先执行pip show opencc命令找到OpenCC包具体所在位置，储存转换方案的位置一般在opencc/clib/share/opencc下，若不是可尝试搜索t2s.json等文件所在位置）。
 #### 克隆这个仓库
 ```bash
 git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
