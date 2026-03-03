@@ -1,12 +1,12 @@
 # OpenCC-DocxConverter
-基于OpenCC的DOCX文档和TXT文件的繁简转换工具
+基于OpenCC的文本文件繁简转换工具
 ## 介绍
 本工具是基于[OpenCC](https://github.com/BYVoid/OpenCC)、[Python-docx](https://github.com/python-openxml/python-docx)封装的文本文件转换工具，支持中文简、繁体之间词汇级别的转换，同时还支持地域间异体字以及词汇的转换。
 
 本程序所收录的《通用规范汉字表》(2013)标准的繁简转换词典来自[OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)。
 
 ## 功能特性
-- 支持DOCX文档、TXT文件的中文繁、简转换
+- 支持DOCX文档、TXT文本文件、SRT字幕文件的中文繁、简转换
 
 - 自动检测并转写TXT文件为UTF-8编码，以兼容OpenCC转换（检测基于[Chardet](https://github.com/chardet/chardet)）
 
