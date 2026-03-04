@@ -926,7 +926,7 @@ class ConversionWorker(QThread):
                     supported_files.append(f)
             
             if not supported_files:
-                self.log_message.emit("在指定文件夹中未找到支持的.docx、.txt或.srt文件")
+                self.log_message.emit("在指定文件夹中未找到支持的docx、txt或srt文件")
                 return False
                 
             self.log_message.emit(f"找到 {len(supported_files)} 个文件待处理")
