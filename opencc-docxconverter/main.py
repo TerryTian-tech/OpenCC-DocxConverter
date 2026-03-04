@@ -447,7 +447,7 @@ class ConversionWorker(QThread):
             output_filename = f"convert_{os.path.basename(input_path)}"
             output_path = os.path.join(output_folder, output_filename)
             
-            with open(output_path, 'w', encoding='utf-8-sig') as f:  # ASS/SSA 通常使用 UTF-8 with BOM
+            with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(converted_content)
             
             self.log_message.emit(f"已保存: {output_path}")
