@@ -1,18 +1,8 @@
 # OpenCC File Converter 简繁通转换大师 
 
-<p align="center">
-  <strong>专业的中文繁简转换工具</strong>
-</p>
+**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持Word文档（DOCX）、文本文件（TXT）、字幕文件（SRT、ASS/SSA、LRC）的转换。
 
-<p align="center">
-  基于 OpenCC 开源项目构建，支持多种文件格式与转换标准
-</p>
-
----
-
-## 项目简介
-
-**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持Word文档（Word）、文本文件（TXT）、字幕文件（SRT、ASS/SSA、LRC）的转换。本工具不仅支持简体与繁体之间的相互转换，也支持陆、台、港三地的繁体标准互相转换，并提供词汇级别的智能转换能力，能够准确处理地域间的异体字和词汇差异。
+本工具不仅支持简体与繁体之间的相互转换，也支持陆、台、港三地的繁体标准互相转换，并提供词汇级别的智能转换能力，能够准确处理地域间的异体字和词汇差异。
 
 ## 主要特性
 
@@ -80,7 +70,7 @@
 
 ## 安装与运行
 
-### 方式一：下载发行版（ Windows 10/11）
+### 方式一：下载发行版（ Windows 10/11 ）
 
 直接从 [Releases](https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases) 页面下载对应平台的压缩包，解压后即可运行，无需配置 Python 环境。
 
