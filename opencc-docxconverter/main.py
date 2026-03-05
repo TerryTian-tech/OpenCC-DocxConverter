@@ -1340,7 +1340,7 @@ class ModernUI(QMainWindow):
         
     def init_ui(self):
         # 设置窗口属性
-        self.setWindowTitle("OpenCC Chinese Docx-Converter")
+        self.setWindowTitle("OpenCC File Converter")
         self.setGeometry(100, 100, 900, 750)
         self.setMinimumSize(800, 600)
         
@@ -1359,7 +1359,7 @@ class ModernUI(QMainWindow):
         main_layout.setSpacing(15)
         
         # 标题区域
-        title_label = QLabel("OpenCC-文本文件繁简转换工具")
+        title_label = QLabel("简繁通转换大师")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setObjectName("titleLabel")
         main_layout.addWidget(title_label)
@@ -1949,15 +1949,18 @@ class ModernUI(QMainWindow):
         
         # 描述区域
         desc_label = QLabel(f"""
-        <h2>OpenCC-文本文件繁简转换工具 V{VERSION}</h2>
+        <h2>简繁通转换大师 V{VERSION}</h2>
         <p>专业的中文繁、简转换工具，助您转换文本文件中的繁、简字形。</p>
+        <p>完全免费、开源、无广告，无需注册和登录即可使用。</p>        
         <p><b>主要特性:</b></p>
         <ul>
-            <li>支持DOCX文档、TXT文本文件、SRT字幕文件的中文繁、简转换</li>
-            <li>自动检测并转写TXT文件为UTF-8编码，以兼容OpenCC转换</li>
-            <li>转换后默认保留DOCX文档格式、排版不变</li>
+            <li>拓展OpenCC开源特性，支持陆、台、港三地标准繁体互转</li>
+            <li>支持DOCX文档、TXT文本文件的中文繁、简转换</li>
+            <li>支持字幕文件（SRT、ASS、SSA、LRC）的中文繁、简转换</li>
             <li>支持批量处理文件转换</li>
+            <li>转换后默认保留DOCX文档格式、排版不变</li>
             <li>支持转换DOCX文档中的脚注和尾注文本</li>
+            <li>所有转换均在本地进行，无需联网，保障您的数据安全</li>
         </ul>
         <p><b>本软件核心功能基于以下开源项目制作：</p>
         <ul>
