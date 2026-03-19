@@ -129,7 +129,7 @@ OpenCC-DocxConverter/
 | [Python-docx](https://github.com/python-openxml/python-docx) | 1.2.0 | Word 文档处理库 |
 | [PySide6](https://www.qt.io/qt-for-python) | 6.9.1 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 5.2.0 | 字符编码检测库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.2.6 | 《通用规范汉字表》标准转换词典|
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.2.7 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
