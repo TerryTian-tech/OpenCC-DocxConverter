@@ -73,52 +73,42 @@
 
 直接从 [Releases](https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases) 页面下载对应平台的压缩包，解压后即可运行，无需配置 Python 环境。
 
-### 方式二：从源码运行
+### 方式二：从源码运行（ Windows/Linux/MacOS ）
 
-#### 1. 克隆仓库
+在 Windows 系统上，使用者需预先部署 Python 运行环境。然后打开终端（PowerShell），执行以下命令安装依赖并运行：
 
 ```bash
 git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
 cd OpenCC-DocxConverter/opencc-docxconverter
-```
-
-#### 2. 安装依赖
-
-```bash
 pip install -r requirements.txt
-```
-
-#### 3. 运行程序
-
-```bash
+Copy-Item -Path "..\dict\*" -Destination "$(python -c "import opencc, os; print(os.path.join(os.path.dirname(opencc.__file__), 'clib', 'share', 'opencc'))")" -Recurse -Force
 python main.py
 ```
 
-#### 从源码运行时如何获取《通用规范汉字表》标准转换支持
+在 Linux 发行版和 Mac 下，使用者需预先部署 Python 运行环境，然后打开终端，执行以下命令安装依赖并运行：
 
-从源码直接运行本软件时，如需使用《通用规范汉字表》相关的转换选项，请完成以下额外配置：
-
-1. 下载 [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards) 项目中的转换词典和 JSON 方案文件
-
-2. 将词典文件和 JSON 文件重命名（具体名称请参考源码中的调用选项）
-
-3. 将文件放入 OpenCC 的转换方案目录：
-   ```bash
-   # 查找 OpenCC 安装位置
-   pip show opencc
-   
-   # 方案文件通常位于：
-   # opencc/clib/share/opencc/
-   ```
+```bash
+git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
+cd OpenCC-DocxConverter/opencc-docxconverter
+pip install -r requirements.txt
+cp -rf ../dict/* "$(python3 -c "import opencc, os; print(os.path.join(os.path.dirname(opencc.__file__), 'clib', 'share', 'opencc'))")"
+python3 main.py
+```
 
 ## 项目结构
 
 ```
 OpenCC-DocxConverter/
-├── main.py              # 主程序入口
-├── requirements.txt     # Python 依赖列表
-├── logo.ico             # 程序图标
-└── README.md            # 项目说明文档
+├── opencc-docxconverter/     # 主程序目录
+│   ├── main.py               # 主程序入口，GUI界面与程序逻辑
+│   ├── doc_converter.py      # Word文档(DOCX)转换模块
+│   ├── text_converter.py     # 文本文件(TXT/SRT/ASS/SSA/LRC)转换模块
+│   ├── updater.py            # 自动更新检查模块
+│   ├── constants.py          # 版本常量
+│   ├── requirements.txt      # Python 依赖列表
+│   └── logo.ico              # 程序图标
+├── dict/                     # 转换词典目录
+└── README.md                 # 项目说明文档
 ```
 
 ## 技术栈
@@ -129,7 +119,7 @@ OpenCC-DocxConverter/
 | [Python-docx](https://github.com/python-openxml/python-docx) | 1.2.0 | Word 文档处理库 |
 | [PySide6](https://www.qt.io/qt-for-python) | 6.9.1 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 5.2.0 | 字符编码检测库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.2.7 | 《通用规范汉字表》标准转换词典|
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.2.9 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
