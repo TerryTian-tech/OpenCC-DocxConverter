@@ -15,7 +15,7 @@ class UpdateChecker(QThread):
 
     def run(self):
         try:
-            url = "https://api.github.com/repos/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards/releases/latest"
+            url = "https://api.github.com/repos/TerryTian-tech/OpenCC-DocxConverter/releases/latest"
             ssl_context = ssl.create_default_context(cafile=certifi.where())
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, context=ssl_context, timeout=5) as response:
@@ -30,7 +30,7 @@ class UpdateChecker(QThread):
                     # 如果标签格式不符合预期，仍使用原字符串，但后续比较会失败
                     latest_version = latest_tag
 
-                download_url = 'https://gitee.com/terrytian-tech/tonggui-traditional-chinese/releases/latest'
+                download_url = 'https://gitee.com/terrytian-tech/opencc-docx-converter/releases/latest'
 
                 # 当前版本（已在程序开头定义）
                 current_parts = [int(x) for x in VERSION.split('.')]
