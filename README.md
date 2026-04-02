@@ -103,7 +103,7 @@ OpenCC-DocxConverter/
 │   ├── main.py               # 主程序入口，GUI界面与程序逻辑
 │   ├── doc_converter.py      # Word文档(DOCX)转换模块
 │   ├── text_converter.py     # 文本文件(TXT/SRT/ASS/SSA/LRC)转换模块
-│   ├── updater.py            # 自动更新检查模块
+│   ├── updater.py            # 更新检查模块
 │   ├── constants.py          # 版本常量
 │   ├── requirements.txt      # Python 依赖列表
 │   └── logo.ico              # 程序图标
