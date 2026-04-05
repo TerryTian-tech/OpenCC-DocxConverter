@@ -3,13 +3,25 @@ import re
 import chardet
 
 from opencc import OpenCC
+import jieba
 
 
-def detect_encoding(file_path, log_callback=None):
-    """检测文件编码，特别处理中文ANSI编码"""
+def detect_encoding(file_path, log_callback=None, force_encoding=None):
+    """检测文件编码，特别处理中文ANSI编码
+
+    :param file_path: 文件路径
+    :param log_callback: 日志回调函数
+    :param force_encoding: 强制指定的编码（如 'big5'）。如果为 None 则自动检测。
+    :return: 检测到的编码名称
+    """
     def log(msg):
         if log_callback:
             log_callback(msg)
+
+    # 如果用户强制指定了编码，直接返回
+    if force_encoding:
+        log(f"用户强制指定编码: {force_encoding}")
+        return force_encoding
 
     log(f"检测文件编码: {file_path}")
     with open(file_path, 'rb') as f:
@@ -28,8 +40,6 @@ def detect_encoding(file_path, log_callback=None):
         try:
             # 尝试用GB18030解码整个文件
             decoded = raw_data.decode('gb18030', errors='strict')
-            # 检查是否包含GB18030特有的字符范围
-            # GB18030扩展了GB2312，支持更多汉字和符号
             if any(ord(char) > 0x9FFF for char in decoded):  # 检查是否包含扩展汉字
                 log("检测到GB18030扩展字符，使用GB18030编码")
                 return 'gb18030'
@@ -47,14 +57,49 @@ def detect_encoding(file_path, log_callback=None):
         chinese_encodings = ['gb18030', 'gbk', 'gb2312', 'big5']
         for enc in chinese_encodings:
             try:
-                # 尝试解码前1000个字节
-                test_data = raw_data[:1000]
-                decoded = test_data.decode(enc, errors='strict')
+                # 修复：改为全文检测，而不是只检测前1000字节
+                decoded = raw_data.decode(enc, errors='strict')
                 # 如果包含中文字符，认为可能是正确的编码
-                if any('\u4e00' <= char <= '\u9fff' for char in decoded):
+                has_chinese = any(
+                    '\u4e00' <= char <= '\u9fff'      # CJK 基本区汉字
+                    or '\u3400' <= char <= '\u4dbf'    # CJK 扩展A区
+                    or '\u3000' <= char <= '\u303f'    # CJK 标点符号
+                    or '\uff00' <= char <= '\uffef'    # 全角字符
+                    for char in decoded
+                )
+                if has_chinese:
                     log(f"检测到中文字符，使用编码: {enc}")
                     return enc
             except UnicodeDecodeError:
+                continue
+
+        # 如果严格解码没有匹配到中文字符，使用宽松模式再试一次
+        # 某些文件可能混有少量非标准字节（如BOM头、控制字符），
+        # strict 模式下会抛异常导致整个编码被跳过
+        for enc in ['gb18030', 'gbk']:
+            try:
+                decoded = raw_data.decode(enc, errors='replace')
+                has_chinese = any(
+                    '\u4e00' <= char <= '\u9fff'
+                    or '\u3400' <= char <= '\u4dbf'
+                    or '\u3000' <= char <= '\u303f'
+                    or '\uff00' <= char <= '\uffef'
+                    for char in decoded
+                )
+                if has_chinese:
+                    # 验证：检查是否有被替换的无效字符
+                    # 如果文件真的是 GB18030，replace 模式应该很少产生替换
+                    replaced_count = decoded.count('\ufffd')
+                    if replaced_count == 0:
+                        log(f"宽松模式下检测到中文且无替换字符，使用编码: {enc}")
+                        return enc
+                    else:
+                        # 替换字符占比很低时（<0.5%），仍然可能是正确的编码
+                        ratio = replaced_count / len(decoded) if decoded else 1
+                        if ratio < 0.005:
+                            log(f"宽松模式下检测到中文（替换率{ratio:.4%}极低），使用编码: {enc}")
+                            return enc
+            except Exception:
                 continue
 
     # 如果检测到UTF-8但置信度不高，尝试GB18030
@@ -78,6 +123,13 @@ def detect_encoding(file_path, log_callback=None):
         log(f"将{encoding}升级为GB18030以确保更好的兼容性")
         return 'gb18030'
 
+    # 最终回退：如果chardet检测到的是非中文编码且置信度不高，
+    # 强制使用gb18030作为最终回退（中文文件最常见的ANSI编码）
+    if encoding.lower() not in ['utf-8', 'utf-8-sig', 'gb18030', 'gbk', 'gb2312', 'big5']:
+        if confidence < 0.5:
+            log(f"chardet检测到非中文编码'{encoding}'（置信度{confidence:.4%}），回退到GB18030")
+            return 'gb18030'
+        
     return encoding
 
 
@@ -123,7 +175,8 @@ def safe_read_file(file_path, encoding, log_callback=None):
                 return ""
 
 
-def convert_srt_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None):
+def convert_srt_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None,
+                      force_encoding=None):
     """
     将SRT字幕文件转换为繁体/简体
     SRT格式示例：
@@ -167,7 +220,7 @@ def convert_srt_file(input_path, output_folder, conversion_type, log_callback=No
             return False
 
         # 检测文件编码
-        encoding = detect_encoding(input_path, log_callback)
+        encoding = detect_encoding(input_path, log_callback, force_encoding)
         log(f"最终使用的编码: {encoding}")
 
         # 检查是否已取消
@@ -195,7 +248,7 @@ def convert_srt_file(input_path, output_folder, conversion_type, log_callback=No
             line = lines[i]
 
             # 检查是否是序号行（纯数字）
-            if line.strip().isdigit():
+            if line.strip().isdigit() and i+1 < len(lines) and '-->' in lines[i+1]:
                 converted_lines.append(line)  # 序号行不转换
                 i += 1
 
@@ -289,7 +342,8 @@ def _convert_srt_text_with_tags(cc, text):
     return ''.join(result)
 
 
-def convert_ass_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None):
+def convert_ass_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None,
+                      force_encoding=None):
     """
     将ASS/SSA字幕文件转换为繁体/简体
     ASS/SSA格式包含多个部分：
@@ -332,7 +386,7 @@ def convert_ass_file(input_path, output_folder, conversion_type, log_callback=No
             return False
 
         # 检测文件编码
-        encoding = detect_encoding(input_path, log_callback)
+        encoding = detect_encoding(input_path, log_callback, force_encoding)
         log(f"最终使用的编码: {encoding}")
 
         # 检查是否已取消
@@ -443,7 +497,8 @@ def _convert_ass_dialogue_line(cc, line):
     return prefix + ','.join(parts)
 
 
-def convert_lrc_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None):
+def convert_lrc_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None,
+                      force_encoding=None):
     """
     将LRC歌词文件转换为繁体/简体
     LRC格式示例：
@@ -490,7 +545,7 @@ def convert_lrc_file(input_path, output_folder, conversion_type, log_callback=No
             return False
 
         # 检测文件编码
-        encoding = detect_encoding(input_path, log_callback)
+        encoding = detect_encoding(input_path, log_callback, force_encoding)
         log(f"最终使用的编码: {encoding}")
 
         # 检查是否已取消
@@ -616,14 +671,172 @@ def _convert_lrc_lyric_text(cc, text):
     return ''.join(result)
 
 
-def convert_txt_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None):
+# 全局变量存储两个独立的分词器实例
+_jieba_modern = None
+_jieba_ancient = None
+_jieba_ancient_userdict_loaded = None  # 记录古汉语分词器当前加载的用户词典
+
+
+def _get_jieba_modern(dict_path=None, log_callback=None):
+    """
+    获取现代汉语分词器实例（单例模式）
+    使用 jieba 默认实例，不加载用户自定义词典
+
+    :param dict_path: 主词典路径
+    :param log_callback: 日志回调函数
+    :return: 现代汉语分词器实例
+    """
+    global _jieba_modern
+
+    if _jieba_modern is None:
+        _jieba_modern = jieba.Tokenizer()
+        _jieba_modern.cache_file = "jieba.modern.cache"
+
+        # 设置主词典
+        if dict_path and os.path.exists(dict_path):
+            _jieba_modern.set_dictionary(dict_path)
+            if log_callback:
+                log_callback(f"现代汉语分词器已设置主词典: {dict_path}")
+
+        # 初始化
+        _jieba_modern.initialize()
+        if log_callback:
+            log_callback("现代汉语分词器初始化完成")
+
+    return _jieba_modern
+
+
+def _get_jieba_ancient(dict_path=None, userdict_path=None, log_callback=None):
+    """
+    获取古汉语分词器实例（单例模式）
+    使用独立的 Tokenizer 实例，支持用户自定义词典
+
+    :param dict_path: 主词典路径
+    :param userdict_path: 用户自定义词典路径
+    :param log_callback: 日志回调函数
+    :return: 古汉语分词器实例
+    """
+    global _jieba_ancient, _jieba_ancient_userdict_loaded
+
+    if _jieba_ancient is None:
+        _jieba_ancient = jieba.Tokenizer()
+        _jieba_ancient.cache_file = "jieba.ancient.cache"
+
+        # 设置主词典
+        if dict_path and os.path.exists(dict_path):
+            _jieba_ancient.set_dictionary(dict_path)
+            if log_callback:
+                log_callback(f"古汉语分词器已设置主词典: {dict_path}")
+
+        # 初始化
+        _jieba_ancient.initialize()
+        if log_callback:
+            log_callback("古汉语分词器初始化完成")
+
+    # 加载用户自定义词典（如果指定且未加载）
+    if userdict_path and _jieba_ancient_userdict_loaded != userdict_path:
+        if os.path.exists(userdict_path):
+            _jieba_ancient.load_userdict(userdict_path)
+            _jieba_ancient_userdict_loaded = userdict_path
+            if log_callback:
+                log_callback(f"古汉语分词器已加载用户词典: {userdict_path}")
+        else:
+            if log_callback:
+                log_callback(f"用户词典不存在: {userdict_path}")
+
+    return _jieba_ancient
+
+
+def _segment_with_jieba_modern(text, dict_path=None, log_callback=None):
+    """
+    使用现代汉语分词器对文本进行分词
+
+    :param text: 待分词的文本
+    :param dict_path: 主词典路径
+    :param log_callback: 日志回调函数
+    :return: 分词后的文本（词之间用 '\x1e' 分隔）
+    """
+    try:
+        tokenizer = _get_jieba_modern(dict_path, log_callback)
+        tokens = tokenizer.cut(text, cut_all=False)
+        return '\x1e'.join(tokens)
+    except Exception as e:
+        if log_callback:
+            log_callback(f"现代汉语分词失败: {e}，使用原文")
+        return text
+
+
+def _segment_with_jieba_ancient(text, dict_path=None, userdict_path=None, log_callback=None):
+    """
+    使用古汉语分词器对文本进行分词
+
+    :param text: 待分词的文本
+    :param dict_path: 主词典路径
+    :param userdict_path: 用户自定义词典路径
+    :param log_callback: 日志回调函数
+    :return: 分词后的文本（词之间用 '\x1e' 分隔）
+    """
+    try:
+        tokenizer = _get_jieba_ancient(dict_path, userdict_path, log_callback)
+        tokens = tokenizer.cut(text, cut_all=False)
+        return '\x1e'.join(tokens)
+    except Exception as e:
+        if log_callback:
+            log_callback(f"古汉语分词失败: {e}，使用原文")
+        return text
+
+
+def get_jieba_dict_path():
+    """
+    获取结巴分词主词典文件路径
+
+    :return: 主词典文件的完整路径
+    """
+    jieba_dir = os.path.dirname(jieba.__file__)
+    # 现代汉语和古汉语模式均使用默认词典 dict.txt
+    return os.path.join(jieba_dir, 'dict.txt')
+
+
+def get_jieba_userdict_path(conversion_type):
+    """
+    获取结巴分词用户自定义词典路径
+
+    :param conversion_type: 转换类型
+    :return: 用户自定义词典的完整路径
+    """
+    jieba_dir = os.path.dirname(jieba.__file__)
+
+    # 简转繁使用 userdict.txt（简体用户词典）
+    # 其他转换选项使用 userdict_traditional.txt（繁体用户词典）
+    if conversion_type in ('s2t', 's2tg', 's2tw', 's2hk', 's2twp'):
+        return os.path.join(jieba_dir, 'userdict.txt')
+    else:
+        return os.path.join(jieba_dir, 'userdict_traditional.txt')
+
+
+def _remove_segment_marks(text):
+    """
+    移除分词标记，恢复原始文本格式
+
+    :param text: 包含分词标记的文本
+    :return: 移除分词标记后的文本
+    """
+    # 移除 '\x1e' (RS, Record Separator) 分词标记
+    return text.replace('\x1e', '')
+
+
+def convert_txt_file(input_path, output_folder, conversion_type, log_callback=None, is_cancelled_callback=None,
+                      force_encoding=None, segment_mode=None):
     """
     将txt文件转换为繁体/简体
+
     :param input_path: 输入文件路径
     :param output_folder: 输出文件夹路径
     :param conversion_type: 转换类型
     :param log_callback: 日志回调函数
     :param is_cancelled_callback: 取消检查回调函数
+    :param force_encoding: 强制指定的编码
+    :param segment_mode: 分词模式，可选 'jieba_modern'（结巴-现代汉语）、'jieba_ancient'（结巴-古汉语）或 None（不分词）
     :return: 转换后的文件路径或False
     """
     def log(msg):
@@ -652,7 +865,7 @@ def convert_txt_file(input_path, output_folder, conversion_type, log_callback=No
             return False
 
         # 检测文件编码
-        encoding = detect_encoding(input_path, log_callback)
+        encoding = detect_encoding(input_path, log_callback, force_encoding)
         log(f"最终使用的编码: {encoding}")
 
         # 检查是否已取消
@@ -666,8 +879,33 @@ def convert_txt_file(input_path, output_folder, conversion_type, log_callback=No
         if is_cancelled_callback and is_cancelled_callback():
             return False
 
+        # 分词处理（如果需要）
+        segmented_content = content
+        dict_path = get_jieba_dict_path()
+        if segment_mode == 'jieba_modern':
+            log("使用结巴分词器（现代汉语）进行分词...")
+            segmented_content = _segment_with_jieba_modern(content, dict_path, log_callback)
+        elif segment_mode == 'jieba_ancient':
+            log("使用结巴分词器（古汉语）进行分词...")
+            # 获取用户自定义词典路径（根据转换类型选择不同的词典）
+            userdict_path = get_jieba_userdict_path(conversion_type)
+            segmented_content = _segment_with_jieba_ancient(content, dict_path, userdict_path, log_callback)
+
+        # 检查是否已取消
+        if is_cancelled_callback and is_cancelled_callback():
+            return False
+
         # 繁简转换
-        converted_content = cc.convert(content)
+        converted_content = cc.convert(segmented_content)
+
+        # 检查是否已取消
+        if is_cancelled_callback and is_cancelled_callback():
+            return False
+
+        # 移除分词标记，恢复原始格式
+        if segment_mode in ('jieba_modern', 'jieba_ancient'):
+            log("移除分词标记，恢复原始格式...")
+            converted_content = _remove_segment_marks(converted_content)
 
         # 检查是否已取消
         if is_cancelled_callback and is_cancelled_callback():

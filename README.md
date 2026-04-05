@@ -66,6 +66,10 @@
 - 自动识别文件夹内所有支持的文件格式
 - 实时显示处理进度和转换日志
 
+**结巴分词预处理：**
+- 支持转换前使用结巴分词进行分词预处理，提高准确度
+- 转换后清除分词标记
+- 结巴分词预置繁体中文和自定义词典
 
 ## 安装与运行
 
@@ -82,6 +86,7 @@ git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
 cd OpenCC-DocxConverter/opencc-docxconverter
 pip install -r requirements.txt
 Copy-Item -Path "..\dict\*" -Destination "$(python -c "import opencc, os; print(os.path.join(os.path.dirname(opencc.__file__), 'clib', 'share', 'opencc'))")" -Recurse -Force
+Copy-Item -Path "..\jieba\*" -Destination "$(python -c 'import jieba, os; print(os.path.dirname(jieba.__file__))')" -Recurse -Force
 python main.py
 ```
 
@@ -92,6 +97,7 @@ git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
 cd OpenCC-DocxConverter/opencc-docxconverter
 pip install -r requirements.txt
 cp -rf ../dict/* "$(python3 -c "import opencc, os; print(os.path.join(os.path.dirname(opencc.__file__), 'clib', 'share', 'opencc'))")"
+cp -rf ../jieba/* "$(python3 -c "import jieba, os; print(os.path.dirname(jieba.__file__))")"
 python3 main.py
 ```
 
@@ -108,6 +114,7 @@ OpenCC-DocxConverter/
 │   ├── requirements.txt      # Python 依赖列表
 │   └── logo.ico              # 程序图标
 ├── dict/                     # 转换词典目录
+├── jieba/                    # 结巴分词词典目录
 └── README.md                 # 项目说明文档
 ```
 
@@ -117,9 +124,10 @@ OpenCC-DocxConverter/
 |-----|------|-----|
 | [OpenCC](https://github.com/BYVoid/OpenCC) | 1.2.0 | 开源中文繁简转换库 |
 | [Python-docx](https://github.com/python-openxml/python-docx) | 1.2.0 | Word 文档处理库 |
-| [PySide6](https://www.qt.io/qt-for-python) | 6.9.1 | Qt for Python GUI 框架 |
-| [Chardet](https://github.com/chardet/chardet) | 5.2.0 | 字符编码检测库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.2.9 | 《通用规范汉字表》标准转换词典|
+| [PySide6](https://www.qt.io/qt-for-python) | 6.11.0 | Qt for Python GUI 框架 |
+| [Chardet](https://github.com/chardet/chardet) | 7.4.0 | 字符编码检测库 |
+| [Jieba](https://github.com/fxsjy/jieba) | 1.2.0 | 结巴分词库 |
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.0 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
@@ -130,3 +138,5 @@ OpenCC-DocxConverter/
 ## 开源协议
 
 Apache-2.0 LICENSE
+
+位于本仓库jieba目录下的结巴分词词典，默认词典dict.txt来自[结巴分词仓库](https://github.com/fxsjy/jieba)，自定义词典使用了[gumblex](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)和来自[hanzi-words](https://github.com/zispace/hanzi-words)的古汉语词汇数据。jieba目录下的所有文件中属于开源贡献者制作的部分均遵循MIT License。

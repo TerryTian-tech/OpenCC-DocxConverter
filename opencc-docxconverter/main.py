@@ -5,7 +5,7 @@ import tempfile
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTextEdit, QFileDialog, QLabel, QProgressBar,
                              QMessageBox, QGroupBox, QComboBox, QCheckBox, QLineEdit,
-                             QStyleFactory, QTabWidget, QRadioButton)
+                             QStyleFactory, QTabWidget)
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import QIcon, QColor, QPalette
 
@@ -22,15 +22,17 @@ class ConversionWorker(QThread):
     progress_updated = Signal(int, str)  # 进度信号
     conversion_finished = Signal(bool, str)  # 完成信号
     log_message = Signal(str)  # 日志消息信号
-    
-    def __init__(self, input_path, output_folder, conversion_type='s2t', preserve_format=True, 
-                 convert_footnotes=True):
+
+    def __init__(self, input_path, output_folder, conversion_type='s2t', preserve_format=True,
+                 convert_footnotes=True, force_encoding=None, segment_mode=None):
         super().__init__()
         self.input_path = input_path
         self.output_folder = output_folder
         self.conversion_type = conversion_type
         self.preserve_format = preserve_format
         self.convert_footnotes = convert_footnotes
+        self.force_encoding = force_encoding
+        self.segment_mode = segment_mode
         self._is_cancelled = False
 
     def run(self):
@@ -77,7 +79,7 @@ class ConversionWorker(QThread):
             if file_ext == '.docx':
                 result = convert_docx_file(
                     self.input_path, self.output_folder, self.conversion_type,
-                    True,  # preserve_format (hardcoded True per original)
+                    self.preserve_format,
                     self.convert_footnotes,
                     lambda msg: self.log_message.emit(msg),
                     lambda: self._is_cancelled
@@ -91,7 +93,9 @@ class ConversionWorker(QThread):
                 result = convert_txt_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled
+                    lambda: self._is_cancelled,
+                    self.force_encoding,
+                    self.segment_mode
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -102,7 +106,8 @@ class ConversionWorker(QThread):
                 result = convert_srt_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled
+                    lambda: self._is_cancelled,
+                    self.force_encoding
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -113,7 +118,8 @@ class ConversionWorker(QThread):
                 result = convert_ass_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled
+                    lambda: self._is_cancelled,
+                    self.force_encoding
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -124,7 +130,8 @@ class ConversionWorker(QThread):
                 result = convert_lrc_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled
+                    lambda: self._is_cancelled,
+                    self.force_encoding
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -173,7 +180,7 @@ class ConversionWorker(QThread):
                     try:
                         result = convert_docx_file(
                             file_path, self.output_folder, self.conversion_type,
-                            True,  # preserve_format (hardcoded True per original)
+                            self.preserve_format,
                             self.convert_footnotes,
                             lambda msg: self.log_message.emit(msg),
                             lambda: self._is_cancelled
@@ -188,7 +195,9 @@ class ConversionWorker(QThread):
                     if convert_txt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled
+                        lambda: self._is_cancelled,
+                        self.force_encoding,
+                        self.segment_mode
                     ):
                         success_count += 1
 
@@ -196,7 +205,8 @@ class ConversionWorker(QThread):
                     if convert_srt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled
+                        lambda: self._is_cancelled,
+                        self.force_encoding
                     ):
                         success_count += 1
 
@@ -204,7 +214,8 @@ class ConversionWorker(QThread):
                     if convert_ass_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled
+                        lambda: self._is_cancelled,
+                        self.force_encoding
                     ):
                         success_count += 1
 
@@ -212,7 +223,8 @@ class ConversionWorker(QThread):
                     if convert_lrc_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled
+                        lambda: self._is_cancelled,
+                        self.force_encoding
                     ):
                         success_count += 1
 
@@ -316,37 +328,171 @@ class ModernUI(QMainWindow):
         # 主题选择按钮
         theme_button_layout = QHBoxLayout()
 
-        # 创建单选按钮
-        self.dark_theme_radio = QRadioButton("暗色主题")
-        self.light_theme_radio = QRadioButton("浅色主题")
+        # 创建复选框（互斥：勾选一个自动取消另一个）
+        self.dark_theme_cb = QCheckBox("暗色主题")
+        self.light_theme_cb = QCheckBox("浅色主题")
 
         # 根据保存的主题设置默认选中
         if self.current_theme == "dark":
-            self.dark_theme_radio.setChecked(True)
+            self.dark_theme_cb.setChecked(True)
         else:
-            self.light_theme_radio.setChecked(True)
+            self.light_theme_cb.setChecked(True)
 
-        # 将单选按钮添加到布局
-        theme_button_layout.addWidget(self.dark_theme_radio)
-        theme_button_layout.addWidget(self.light_theme_radio)
+        # 将复选框添加到布局
+        theme_button_layout.addWidget(self.dark_theme_cb)
+        theme_button_layout.addWidget(self.light_theme_cb)
         theme_button_layout.addStretch()
 
         theme_layout.addLayout(theme_button_layout)
 
-        # 连接信号
-        self.dark_theme_radio.toggled.connect(lambda: self.on_theme_changed("dark"))
-        self.light_theme_radio.toggled.connect(lambda: self.on_theme_changed("light"))
+        # 连接信号：勾选一个时自动取消另一个（互斥行为）
+        self.dark_theme_cb.stateChanged.connect(lambda state: self.on_theme_changed("dark", state))
+        self.light_theme_cb.stateChanged.connect(lambda state: self.on_theme_changed("light", state))
 
         layout.addWidget(theme_group)
+
+        # 文件编码检测设置区域
+        encoding_group = QGroupBox("编码检测设置")
+        encoding_group_layout = QVBoxLayout(encoding_group)
+        encoding_group_layout.setSpacing(15)
+        encoding_group_layout.setContentsMargins(15, 20, 15, 15)
+
+        # 编码检测说明
+        encoding_desc = QLabel(
+            "指定读取TXT等文本文件时使用的编码，默认为自动检测。\n"
+            "如果自动检测识别错误（例如Big5编码被误识别为GB18030），\n"
+            "可在此手动强制指定编码。"
+        )
+        encoding_desc.setWordWrap(True)
+        encoding_group_layout.addWidget(encoding_desc)
+
+        # 编码选择
+        encoding_select_layout = QHBoxLayout()
+        encoding_select_layout.setSpacing(10)
+        encoding_select_layout.addWidget(QLabel("强制编码:"))
+
+        self.encoding_combo = QComboBox()
+        self.encoding_combo.addItem("自动检测", None)
+        self.encoding_combo.addItem("强制使用 GB18030", "gb18030")
+        self.encoding_combo.addItem("强制使用 GBK", "gbk")
+        self.encoding_combo.addItem("强制使用 GB2312", "gb2312")
+        self.encoding_combo.addItem("强制使用 UTF-8", "utf-8")
+        self.encoding_combo.addItem("强制使用 Big5", "cp950")
+        self.encoding_combo.addItem("强制使用 Big5-HKSCS", "big5-hkscs")
+        self.encoding_combo.setToolTip(
+            "对于TXT等文本文件，指定读取时使用的编码。\n"
+            "默认为自动检测；如果自动检测识别错误，可手动强制指定。"
+        )
+
+        # 从设置中恢复编码选择
+        saved_encoding_index = self.settings.value("encoding_index", 0, type=int)
+        if 0 <= saved_encoding_index < self.encoding_combo.count():
+            self.encoding_combo.setCurrentIndex(saved_encoding_index)
+
+        self.encoding_combo.currentIndexChanged.connect(self.on_encoding_changed)
+        encoding_select_layout.addWidget(self.encoding_combo)
+        encoding_group_layout.addLayout(encoding_select_layout)
+
+        layout.addWidget(encoding_group)
+
+        # 分词设置区域
+        segment_group = QGroupBox("分词设置")
+        segment_layout = QVBoxLayout(segment_group)
+        segment_layout.setSpacing(15)
+        segment_layout.setContentsMargins(15, 20, 15, 15)
+
+        # 分词说明
+        segment_desc = QLabel(
+            "分词功能可以在转换前对文本进行分词预处理，以提高转换准确性。\n"
+            "注意：分词仅对TXT文件有效，其他类型文件暂不支持分词功能。"
+        )
+        segment_desc.setWordWrap(True)
+        segment_layout.addWidget(segment_desc)
+
+        # 分词选项
+        segment_options_layout = QVBoxLayout()
+
+        # 不分词选项
+        self.no_segment_cb = QCheckBox("不分词（默认）")
+        self.no_segment_cb.setChecked(True)
+        self.no_segment_cb.stateChanged.connect(lambda state: self.on_segment_mode_changed("none", state))
+
+        # 结巴分词（现代汉语）选项
+        self.jieba_modern_cb = QCheckBox("转换前使用结巴分词进行文本分词预处理")
+        self.jieba_modern_cb.stateChanged.connect(lambda state: self.on_segment_mode_changed("jieba_modern", state))
+
+        # 结巴分词（古汉语）选项
+        self.jieba_ancient_cb = QCheckBox("转换前使用结巴分词对古汉语文本进行分词预处理（experimental）")
+        self.jieba_ancient_cb.stateChanged.connect(lambda state: self.on_segment_mode_changed("jieba_ancient", state))
+
+        segment_options_layout.addWidget(self.no_segment_cb)
+        segment_options_layout.addWidget(self.jieba_modern_cb)
+        segment_options_layout.addWidget(self.jieba_ancient_cb)
+        segment_layout.addLayout(segment_options_layout)
+
+        # 从设置中恢复分词选择
+        saved_segment_mode = self.settings.value("segment_mode", "none")
+        self._apply_segment_mode(saved_segment_mode)
+
+        layout.addWidget(segment_group)
 
         layout.addStretch()
         return tab
 
-    def on_theme_changed(self, theme):
-        """主题更改事件处理"""
-        if (theme == "dark" and self.dark_theme_radio.isChecked()) or \
-           (theme == "light" and self.light_theme_radio.isChecked()):
-            self.change_theme(theme)
+    def _apply_segment_mode(self, mode):
+        """应用分词模式设置"""
+        self.no_segment_cb.setChecked(False)
+        self.jieba_modern_cb.setChecked(False)
+        self.jieba_ancient_cb.setChecked(False)
+
+        if mode == "jieba_modern":
+            self.jieba_modern_cb.setChecked(True)
+        elif mode == "jieba_ancient":
+            self.jieba_ancient_cb.setChecked(True)
+        else:
+            self.no_segment_cb.setChecked(True)
+
+    def on_segment_mode_changed(self, mode, state):
+        """分词模式更改事件处理（互斥逻辑）"""
+        if state != Qt.CheckState.Checked.value:
+            return
+
+        # 互斥：勾选一个时取消其他
+        if mode == "none":
+            self.jieba_modern_cb.setChecked(False)
+            self.jieba_ancient_cb.setChecked(False)
+        elif mode == "jieba_modern":
+            self.no_segment_cb.setChecked(False)
+            self.jieba_ancient_cb.setChecked(False)
+        elif mode == "jieba_ancient":
+            self.no_segment_cb.setChecked(False)
+            self.jieba_modern_cb.setChecked(False)
+
+        # 保存设置
+        self.settings.setValue("segment_mode", mode)
+        mode_display = {
+            "none": "不分词",
+            "jieba_modern": "结巴分词（现代汉语）",
+            "jieba_ancient": "结巴分词（古汉语）"
+        }
+        self.statusBar().showMessage(f"分词设置已更改为: {mode_display.get(mode, '不分词')}")
+
+    def on_encoding_changed(self, index):
+        """编码设置更改事件处理"""
+        self.settings.setValue("encoding_index", index)
+        encoding_name = self.encoding_combo.currentText()
+        self.statusBar().showMessage(f"编码设置已更改为: {encoding_name}")
+
+    def on_theme_changed(self, theme, state):
+        """主题更改事件处理（复选框互斥逻辑）"""
+        if state != Qt.CheckState.Checked.value:
+            return
+        # 互斥：勾选一个时取消另一个
+        if theme == "dark":
+            self.light_theme_cb.setChecked(False)
+        else:
+            self.dark_theme_cb.setChecked(False)
+        self.change_theme(theme)
 
     def apply_theme(self, theme):
         """应用指定主题"""
@@ -495,25 +641,7 @@ class ModernUI(QMainWindow):
             QTabBar::tab:hover:!selected {
                 background-color: #4a77a8;
             }
-            QRadioButton {
-                color: #aaaaaa;
-                padding: 8px;
-                font-size: 14px;
-            }
-            QRadioButton::indicator {
-                width: 18px;
-                height: 18px;
-            }
-            QRadioButton::indicator:checked {
-                background-color: #00bc8c;
-                border: 2px solid #555555;
-                border-radius: 9px;
-            }
-            QRadioButton::indicator:unchecked {
-                background-color: #3c3c3c;
-                border: 2px solid #555555;
-                border-radius: 9px;
-            }
+
             QPushButton#cancelButton {
                 background-color: #e74c3c;
                 font-weight: bold;
@@ -666,25 +794,7 @@ class ModernUI(QMainWindow):
             QTabBar::tab:hover:!selected {
                 background-color: #d0d0d0;
             }
-            QRadioButton {
-                color: #333333;
-                padding: 8px;
-                font-size: 14px;
-            }
-            QRadioButton::indicator {
-                width: 18px;
-                height: 18px;
-            }
-            QRadioButton::indicator:checked {
-                background-color: #4caf50;
-                border: 2px solid #cccccc;
-                border-radius: 9px;
-            }
-            QRadioButton::indicator:unchecked {
-                background-color: white;
-                border: 2px solid #cccccc;
-                border-radius: 9px;
-            }
+
             QPushButton#cancelButton {
                 background-color: #e74c3c;
                 font-weight: bold;
@@ -708,6 +818,16 @@ class ModernUI(QMainWindow):
         """保存所有设置"""
         # 保存主题
         self.settings.setValue("theme", self.current_theme)
+        # 保存编码设置
+        self.settings.setValue("encoding_index", self.encoding_combo.currentIndex())
+        # 保存分词设置
+        if self.jieba_modern_cb.isChecked():
+            segment_mode = 'jieba_modern'
+        elif self.jieba_ancient_cb.isChecked():
+            segment_mode = 'jieba_ancient'
+        else:
+            segment_mode = 'none'
+        self.settings.setValue("segment_mode", segment_mode)
 
     def create_conversion_tab(self):
         """创建转换选项卡"""
@@ -788,8 +908,8 @@ class ModernUI(QMainWindow):
         # 保留格式选项 - 设置为不可用
         self.preserve_format_cb = QCheckBox("尽量保留Word文档的原有格式")
         self.preserve_format_cb.setChecked(True)
-        self.preserve_format_cb.setEnabled(False)  # 设置为不可用
-        self.preserve_format_cb.setToolTip("此选项已固定启用，不可更改")
+        self.preserve_format_cb.setEnabled(True)  # 设置为可用
+        self.preserve_format_cb.setToolTip("是否保留Word文档的原有格式")
 
         # 转换脚注选项 - 设置为可用
         self.convert_footnotes_cb = QCheckBox("转换Word文档里的脚注和尾注")
@@ -998,8 +1118,24 @@ class ModernUI(QMainWindow):
         preserve_format = self.preserve_format_cb.isChecked()
         convert_footnotes = self.convert_footnotes_cb.isChecked()
 
+        # 获取强制编码选项
+        force_encoding = self.encoding_combo.currentData()
+
+        # 获取分词模式
+        if self.jieba_modern_cb.isChecked():
+            segment_mode = 'jieba_modern'
+        elif self.jieba_ancient_cb.isChecked():
+            segment_mode = 'jieba_ancient'
+        else:
+            segment_mode = None
+
         # 在日志中显示当前设置
-        self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}")
+        segment_mode_display = {
+            None: '不分词',
+            'jieba_modern': '结巴分词（现代汉语）',
+            'jieba_ancient': '结巴分词（古汉语）'
+        }
+        self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}，强制编码={force_encoding or '自动'}，分词模式={segment_mode_display.get(segment_mode, '不分词')}")
 
         # 启动转换线程
         self.start_button.setEnabled(False)
@@ -1011,8 +1147,10 @@ class ModernUI(QMainWindow):
             input_path,
             output_path,
             conversion_type,
-            True,  # preserve_format 固定为True
-            convert_footnotes  # 使用复选框的实际值
+            preserve_format,  # 使用复选框的实际值
+            convert_footnotes,  # 使用复选框的实际值
+            force_encoding,
+            segment_mode
         )
         self.worker.progress_updated.connect(self.update_progress)
         self.worker.conversion_finished.connect(self.conversion_finished)
