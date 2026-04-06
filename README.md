@@ -66,10 +66,11 @@
 - 自动识别文件夹内所有支持的文件格式
 - 实时显示处理进度和转换日志
 
-**结巴分词预处理：**
+**分词预处理：**
 - 支持转换前使用结巴分词进行分词预处理，提高准确度
 - 转换后清除分词标记
-- 结巴分词预置繁体中文和自定义词典
+- 结巴分词预置繁体中文和自定义词典（古汉语）
+- 支持使用UD-Kanbun古汉语分词组件
 
 ## 安装与运行
 
@@ -127,6 +128,7 @@ OpenCC-DocxConverter/
 | [PySide6](https://www.qt.io/qt-for-python) | 6.11.0 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 7.4.0 | 字符编码检测库 |
 | [Jieba](https://github.com/fxsjy/jieba) | 0.42.1 | 结巴分词库 |
+| [UD-Kanbun](https://github.com/KoichiYasuoka/UD-Kanbun) | 3.4.7 | 古汉语分词库 |
 | [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.0 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
