@@ -822,7 +822,7 @@ def _segment_with_jieba_ancient(text, dict_path=None, userdict_path=None, log_ca
     """
     try:
         # s2t等使用简体主词典分词器，其他使用繁体主词典分词器
-        if conversion_type ==('s2t','s2tg','s2tw','s2hk','s2twp'):
+        if conversion_type in ('s2t','s2tg','s2tw','s2hk','s2twp'):
             tokenizer = _get_jieba_ancient_simplified(dict_path, userdict_path, log_callback)
         else:
             tokenizer = _get_jieba_ancient_traditional(dict_path, userdict_path, log_callback)
@@ -851,7 +851,7 @@ def get_jieba_dict_path(segment_mode=None, conversion_type=None):
     # 古汉语模式根据转换类型选择不同的主词典
     if segment_mode == 'jieba_ancient':
         # 使用 dict_ancient_chinese.txt（简体主词典）
-        if conversion_type == ('s2t','s2tg','s2tw','s2hk','s2twp'):
+        if conversion_type in ('s2t','s2tg','s2tw','s2hk','s2twp'):
             return os.path.join(jieba_dir, 'dict_ancient_chinese.txt')
         #使用 dict_ancient_chinese_traditional.txt（繁体主词典）
         else:
@@ -952,7 +952,7 @@ def convert_txt_file(input_path, output_folder, conversion_type, log_callback=No
             segmented_content = _segment_with_jieba_modern(content, dict_path, log_callback)
         elif segment_mode == 'jieba_ancient':
             # 根据转换类型选择不同的分词器和词典
-            if conversion_type == ('s2t','s2tg','s2tw','s2hk','s2twp'):
+            if conversion_type in ('s2t','s2tg','s2tw','s2hk','s2twp'):
                 log("使用结巴分词器（古汉语-简体主词典）进行分词...")
             else:
                 log("使用结巴分词器（古汉语-繁体主词典）进行分词...")
