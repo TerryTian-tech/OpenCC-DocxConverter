@@ -69,7 +69,7 @@
 **结巴分词预处理：**
 - 支持转换前使用结巴分词进行分词预处理，提高准确度
 - 转换后清除分词标记
-- 结巴分词预置繁体中文和自定义词典
+- 结巴分词预置现代汉语和古代汉语分词词典
 
 ## 安装与运行
 
@@ -139,4 +139,4 @@ OpenCC-DocxConverter/
 
 Apache-2.0 LICENSE
 
-位于本仓库jieba目录下的结巴分词词典，默认词典dict.txt来自[结巴分词仓库](https://github.com/fxsjy/jieba)，自定义词典使用了[gumblex](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)和来自[hanzi-words](https://github.com/zispace/hanzi-words)的古汉语词汇数据。jieba目录下的所有文件中属于开源贡献者制作的部分均遵循MIT License。
+jieba目录下的dict.txt来自[结巴分词仓库](https://github.com/fxsjy/jieba)，dict_ancient_chinese.txt和dict_ancient_chinese_traditional.txt来自[gumblex](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。以上文件遵循MIT License开源，特此说明。
