@@ -127,7 +127,7 @@ OpenCC-DocxConverter/
 | [PySide6](https://www.qt.io/qt-for-python) | 6.11.0 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 7.4.0 | 字符编码检测库 |
 | [Jieba](https://github.com/fxsjy/jieba) | 0.42.1 | 结巴分词库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.0 | 《通用规范汉字表》标准转换词典|
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.1 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
