@@ -139,4 +139,4 @@ OpenCC-DocxConverter/
 
 Apache-2.0 LICENSE
 
-jieba目录下的dict.txt来自[结巴分词仓库](https://github.com/fxsjy/jieba)，dict_ancient_chinese.txt和dict_ancient_chinese_traditional.txt来自[gumblex](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。以上文件遵循MIT License开源，特此说明。
+jieba目录下的dict.txt来自[结巴分词仓库](https://github.com/fxsjy/jieba)，dict_ancient_chinese.txt和dict_ancient_chinese_traditional.txt来自[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。以上文件遵循MIT License开源，特此说明。
