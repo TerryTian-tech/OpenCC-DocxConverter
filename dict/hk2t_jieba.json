@@ -1,0 +1,23 @@
+{
+  "name": "Traditional Chinese (Hong Kong variant) to Traditional Chinese",
+  "segmentation": {
+    "type": "jieba",
+    "resources": {
+      "dict_path": "jieba_dict/jieba.dict.utf8",
+      "model_path": "jieba_dict/hmm_model.utf8",
+      "user_dict_path": "jieba_dict/user.dict.traditional.utf8"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [{
+        "type": "ocd2",
+        "file": "HKVariantsRevPhrases.ocd2"
+      }, {
+        "type": "ocd2",
+        "file": "HKVariantsRev.ocd2"
+      }] 
+    }
+  }]
+}

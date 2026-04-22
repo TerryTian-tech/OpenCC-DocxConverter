@@ -35,6 +35,12 @@ class ConversionWorker(QThread):
         self.segment_mode = segment_mode
         self._is_cancelled = False
 
+        # 根据分词模式自动调整OpenCC配置名称
+        if self.segment_mode == 'jieba_modern':
+            self.conversion_type += '_jieba'
+        elif self.segment_mode == 'jieba_ancient':
+            self.conversion_type += '_jieba_traditional'
+
     def run(self):
         try:
             success = self.process_files()
@@ -403,8 +409,7 @@ class ModernUI(QMainWindow):
 
         # 分词说明
         segment_desc = QLabel(
-            "分词功能可以在转换前对文本进行分词预处理，以提高转换准确性。\n"
-            "注意：分词仅对TXT文件有效，其他类型文件暂不支持分词功能。"
+            "分词功能可以在转换前对文本进行分词预处理，以提高转换准确性。"
         )
         segment_desc.setWordWrap(True)
         segment_layout.addWidget(segment_desc)
@@ -988,7 +993,7 @@ class ModernUI(QMainWindow):
               <p>Python-docx：https://github.com/python-openxml/python-docx
               <p>Chardet：https://github.com/chardet/chardet
         </ul>
-        <p><b>本软件封装的OpenCC版本为1.2.0，Python-docx版本为1.2.0。</p>
+        <p><b>本软件封装的OpenCC版本为1.3.0，Python-docx版本为1.2.0。</p>
         <p><b>本软件遵循Apache-2.0开源协议发布。</p>
         """)
         desc_label.setWordWrap(True)
