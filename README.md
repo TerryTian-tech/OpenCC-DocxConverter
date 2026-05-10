@@ -102,7 +102,7 @@ DEST="$(python3 -c "import opencc, os; print(os.path.join(os.path.dirname(opencc
 mkdir -p "$DEST" && cp -rf ../jieba/* "$DEST"
 python3 main.py
 ```
-结巴分词支持词典位于jieba目录下，其中现代汉语分词词典来自[结巴分词仓库](https://github.com/fxsjy/jieba)，古汉语分词默认词典使用了[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。如需结巴分词功能，请前往OpenCC官方仓库提取（[Windows](https://github.com/BYVoid/OpenCC/releases/download/ver.1.3.0/OpenCC-1.3.0-windows-x64-portable.zip)、[Linux](https://github.com/BYVoid/OpenCC/releases/download/ver.1.3.0/opencc-jieba_1.3.0_amd64.deb)）bin\plugins下的文件复制到你本地的OpenCC目录下（可运行 `pip show opencc` 命令查看OpenCC所在位置）。
+结巴分词支持词典位于jieba目录下，其中现代汉语分词词典来自[结巴分词仓库](https://github.com/fxsjy/jieba)，古汉语分词默认词典使用了[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。如需结巴分词功能，请前往OpenCC官方仓库提取（[Windows](https://github.com/BYVoid/OpenCC/releases/download/ver.1.3.1/OpenCC-1.3.1-windows-x64-portable.zip)、[Linux](https://github.com/BYVoid/OpenCC/releases/download/ver.1.3.1/opencc-jieba_1.3.1_amd64.deb)）bin\plugins下的文件复制到你本地的OpenCC目录下（可运行 `pip show opencc` 命令查看OpenCC所在位置）。
 
 ## 项目结构
 
@@ -125,11 +125,11 @@ OpenCC-DocxConverter/
 
 | 组件 | 版本 | 说明 |
 |-----|------|-----|
-| [OpenCC](https://github.com/BYVoid/OpenCC) | 1.3.0 | 开源中文繁简转换库 |
+| [OpenCC](https://github.com/BYVoid/OpenCC) | 1.3.1 | 开源中文繁简转换库 |
 | [Python-docx](https://github.com/python-openxml/python-docx) | 1.2.0 | Word 文档处理库 |
 | [PySide6](https://www.qt.io/qt-for-python) | 6.11.0 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 7.4.3 | 字符编码检测库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.2 | 《通用规范汉字表》标准转换词典|
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.5 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
