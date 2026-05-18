@@ -1,6 +1,6 @@
 # OpenCC File Converter 简繁通转换大师 
 
-**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持Word文档（DOCX）、文本文件（TXT）、字幕文件（SRT、ASS/SSA、LRC）的转换。
+**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持Word文档（DOCX）、文本文件（TXT）、电子书（EPUB）和字幕文件（SRT、ASS/SSA、LRC）的转换。
 
 本工具不仅支持简体与繁体之间的相互转换，也支持陆、台、港三地的繁体标准互相转换，并提供词汇级别的智能转换能力，能够准确处理地域间的异体字和词汇差异。
 
@@ -14,6 +14,7 @@
 |---------|------|---------|
 | **DOCX** | Microsoft Word 文档 | 保留原有格式、排版，可选择是否转换页眉页脚、脚注尾注 |
 | **TXT** | 纯文本文件 | 自动检测编码并转换为 UTF-8 |
+| **EPUB** | 电子书文件 | 转换文本内容 |
 | **SRT** | SubRip 字幕文件 | 保留时间码，支持 ASS/SSA 样式标签 |
 | **ASS/SSA** | Advanced SubStation Alpha 字幕 | 保留样式定义，仅转换对话文本 |
 | **LRC** | 歌词文件 | 保留时间标签和增强型标签 |
