@@ -579,7 +579,7 @@
 
         .format-icon.docx { background: #DEEBFF; color: #0050C9; }
         .format-icon.txt { background: #F1F5F9; color: #475569; }
-        .format-icon.srt { background: #FEF3C7; color: #B45309; }
+        .format-icon.epub { background: #FEF3C7; color: #B45309; }
         .format-icon.ass { background: #FCE7F3; color: #BE185D; }
 
         .format-name {
@@ -1147,6 +1147,7 @@
                         <div class="demo-formats">
                             <span class="format-tag">DOCX</span>
                             <span class="format-tag">TXT</span>
+                            <span class="format-tag">EPUB</span>
                             <span class="format-tag">SRT</span>
                             <span class="format-tag">ASS</span>
                             <span class="format-tag">LRC</span>
@@ -1223,9 +1224,9 @@
                     <p class="format-desc" data-lang="format-txt">自动检测编码并转换为 UTF-8</p>
                 </div>
                 <div class="format-card">
-                    <div class="format-icon srt">SRT</div>
-                    <h3 class="format-name">字幕文件</h3>
-                    <p class="format-desc" data-lang="format-srt">保留时间码，支持 ASS/SSA 样式标签</p>
+                    <div class="format-icon epub">EPUB</div>
+                    <h3 class="format-name">电子出版</h3>
+                    <p class="format-desc" data-lang="format-epub">转换所有纯文本内容</p>
                 </div>
                 <div class="format-card">
                     <div class="format-icon ass">ASS</div>
@@ -1399,7 +1400,7 @@
                 'formats-desc': '满足不同场景下的繁简转换需求',
                 'format-docx': '保留原有格式、排版，可选择是否转换页眉页脚、脚注尾注',
                 'format-txt': '自动检测编码并转换为 UTF-8',
-                'format-srt': '保留时间码，支持 ASS/SSA 样式标签',
+                'format-epub': '转换所有纯文本内容',
                 'format-ass': '保留样式定义，仅转换对话文本',
                 'modes-title': '17 种转换模式',
                 'mode1': '简体 → 繁体（OpenCC）',
@@ -1456,7 +1457,7 @@
                 'formats-desc': '滿足不同場景下的繁簡轉換需求',
                 'format-docx': '保留原有格式、排版，可選擇是否轉換頁眉頁腳、腳註尾註',
                 'format-txt': '自動檢測編碼並轉換為 UTF-8',
-                'format-srt': '保留時間碼，支援 ASS/SSA 樣式標籤',
+                'format-epub': '轉換所有純文本內容',
                 'format-ass': '保留樣式定義，僅轉換對話文字',
                 'modes-title': '17 種轉換模式',
                 'mode1': '簡體 → 繁體（OpenCC）',
