@@ -1009,7 +1009,7 @@ class ModernUI(QMainWindow):
             <li>支持转换DOCX文档中的脚注和尾注文本</li>
             <li>所有转换均在本地进行，无需联网，保障您的数据安全</li>
         </ul>
-        <p><b>本请从以下页面获取本工具最新版本：</p>
+        <p><b>请从以下页面获取本工具最新版本：</p>
         <ul>
               <p>主仓库（Github）： https://github.com/TerryTian-tech/OpenCC-DocxConverter
               <p>镜像1（Gitee）：https://gitee.com/terrytian-tech/opencc-docx-converter
