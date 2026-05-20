@@ -1002,19 +1002,19 @@ class ModernUI(QMainWindow):
         <ul>
             <li>拓展OpenCC开源特性，支持陆、台、港三地标准繁体互转</li>
             <li>支持DOCX文档、TXT文本文件的中文繁、简转换</li>
+            <li>支持EPUB电子出版文件的中文简、繁转换</li>
             <li>支持字幕文件（SRT、ASS、SSA、LRC）的中文繁、简转换</li>
             <li>支持批量处理文件转换</li>
             <li>转换后默认保留DOCX文档格式、排版不变</li>
             <li>支持转换DOCX文档中的脚注和尾注文本</li>
             <li>所有转换均在本地进行，无需联网，保障您的数据安全</li>
         </ul>
-        <p><b>本软件核心功能基于以下开源项目制作：</p>
+        <p><b>本请从以下页面获取本工具最新版本：</p>
         <ul>
-              <p>OpenCC: https://github.com/BYVoid/OpenCC
-              <p>Python-docx：https://github.com/python-openxml/python-docx
-              <p>Chardet：https://github.com/chardet/chardet
+              <p>主仓库（Github）： https://github.com/TerryTian-tech/OpenCC-DocxConverter
+              <p>镜像1（Gitee）：https://gitee.com/terrytian-tech/opencc-docx-converter
+              <p>镜像2（GitCode）：https://gitcode.com/TerryTian-tech/OpenCC-DocxConverter
         </ul>
-        <p><b>本软件封装的OpenCC版本为1.3.0，Python-docx版本为1.2.0。</p>
         <p><b>本软件遵循Apache-2.0开源协议发布。</p>
         """)
         desc_label.setWordWrap(True)

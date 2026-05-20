@@ -113,6 +113,7 @@ OpenCC-DocxConverter/
 │   ├── main.py               # 主程序入口，GUI界面与程序逻辑
 │   ├── doc_converter.py      # Word文档(DOCX)转换模块
 │   ├── text_converter.py     # 文本文件(TXT/SRT/ASS/SSA/LRC)转换模块
+│   ├── epub_converter.py     # 电子书文件(EPUB)转换模块
 │   ├── updater.py            # 更新检查模块
 │   ├── constants.py          # 版本常量
 │   ├── requirements.txt      # Python 依赖列表
@@ -130,6 +131,10 @@ OpenCC-DocxConverter/
 | [Python-docx](https://github.com/python-openxml/python-docx) | 1.2.0 | Word 文档处理库 |
 | [PySide6](https://www.qt.io/qt-for-python) | 6.11.0 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 7.4.3 | 字符编码检测库 |
+| [Certifi](https://pypi.org/project/certifi/) | 2026.5.20 | Mozilla 根证书库 |
+| [Ebooklib](https://github.com/aerkalov/ebooklib) | 0.20 | 读写EPUB文件Python库 |
+| [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.14.3 | HTML和XML文档解析库 |
+| [lxml](https://github.com/lxml/lxml) | 6.1.1 | 大型文档和XML处理库 |
 | [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.5 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
