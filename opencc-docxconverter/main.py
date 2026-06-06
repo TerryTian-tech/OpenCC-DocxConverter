@@ -157,7 +157,7 @@ class ConversionWorker(QThread):
 
             self.log_message.emit(f"处理完成！成功转换 {success_count}/{total_files} 个文件")
             self.progress_updated.emit(100, "转换完成!")
-            return True
+            return success_count > 0
 
         # 处理单个文件
         if os.path.isfile(self.input_path):
@@ -1187,6 +1187,10 @@ class ModernUI(QMainWindow):
     def on_input_edited(self):
         """用户手动编辑输入框时，清空多选文件列表"""
         self.selected_files = []
+        # 如果当前显示的是多选占位文本，清空输入框以避免状态不同步
+        text = self.input_edit.text()
+        if text.startswith("已选择 ") and text.endswith(" 个文件"):
+            self.input_edit.clear()
 
     def browse_output(self):
         """浏览输出路径"""
@@ -1259,6 +1263,11 @@ class ModernUI(QMainWindow):
             'jieba_ancient': '结巴分词（古汉语）'
         }
         self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}，强制编码={force_encoding or '自动'}，分词模式={segment_mode_display.get(segment_mode, '不分词')}")
+
+        # 如果已有转换线程在运行，先取消并等待其结束
+        if hasattr(self, 'worker') and self.worker.isRunning():
+            self.worker.cancel()
+            self.worker.wait()
 
         # 启动转换线程
         self.start_button.setEnabled(False)
