@@ -1256,14 +1256,6 @@ class ModernUI(QMainWindow):
         else:
             segment_mode = None
 
-        # 在日志中显示当前设置
-        segment_mode_display = {
-            None: '不分词',
-            'jieba_modern': '结巴分词（现代汉语）',
-            'jieba_ancient': '结巴分词（古汉语）'
-        }
-        self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}，强制编码={force_encoding or '自动'}，分词模式={segment_mode_display.get(segment_mode, '不分词')}")
-
         # 如果已有转换线程在运行，先取消并等待其结束
         if hasattr(self, 'worker') and self.worker.isRunning():
             self.worker.cancel()
@@ -1274,6 +1266,14 @@ class ModernUI(QMainWindow):
         self.cancel_button.setEnabled(True)
         self.progress_bar.setValue(0)
         self.log_text.clear()
+
+        # 在日志中显示当前设置
+        segment_mode_display = {
+            None: '不分词',
+            'jieba_modern': '结巴分词（现代汉语）',
+            'jieba_ancient': '结巴分词（古汉语）'
+        }
+        self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}，强制编码={force_encoding or '自动'}，分词模式={segment_mode_display.get(segment_mode, '不分词')}")
 
         self.worker = ConversionWorker(
             input_path,
