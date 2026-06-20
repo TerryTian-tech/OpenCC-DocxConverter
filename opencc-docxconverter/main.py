@@ -5,7 +5,7 @@ import tempfile
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTextEdit, QFileDialog, QLabel, QProgressBar,
                              QMessageBox, QGroupBox, QComboBox, QCheckBox, QLineEdit,
-                             QStyleFactory, QTabWidget)
+                             QStyleFactory, QStackedWidget, QFrame)
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import QIcon, QColor, QPalette
 
@@ -383,8 +383,8 @@ class ModernUI(QMainWindow):
     def init_ui(self):
         # 设置窗口属性
         self.setWindowTitle("OpenCC File Converter")
-        self.setGeometry(100, 100, 900, 750)
-        self.setMinimumSize(800, 600)
+        self.setGeometry(100, 100, 1050, 750)
+        self.setMinimumSize(900, 650)
 
         # 设置窗口图标 - 新增的logo功能
         self.setWindowIcon(QIcon(self.get_logo_path()))
@@ -396,25 +396,57 @@ class ModernUI(QMainWindow):
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
 
-        # 创建主布局
-        main_layout = QVBoxLayout(main_widget)
-        main_layout.setSpacing(15)
+        # 创建主布局（左右分区）
+        main_layout = QHBoxLayout(main_widget)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 左侧导航栏
+        sidebar = QFrame()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(240)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(15, 20, 15, 20)
+        sidebar_layout.setSpacing(15)
 
         # 标题区域
         title_label = QLabel("简繁通转换大师")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setObjectName("titleLabel")
-        main_layout.addWidget(title_label)
+        sidebar_layout.addWidget(title_label)
 
-        # 创建选项卡
-        tab_widget = QTabWidget()
-        tab_widget.addTab(self.create_conversion_tab(), "文件转换")
-        tab_widget.addTab(self.create_settings_tab(), "设置")
-        tab_widget.addTab(self.create_about_tab(), "关于")
-        main_layout.addWidget(tab_widget)
+        # 导航按钮
+        self.nav_buttons = []
+        nav_items = ["文件转换", "设置", "关于"]
+        for index, name in enumerate(nav_items):
+            btn = QPushButton(name)
+            btn.setObjectName("navButton")
+            btn.setCheckable(True)
+            btn.clicked.connect(lambda checked, idx=index: self.switch_page(idx))
+            sidebar_layout.addWidget(btn)
+            self.nav_buttons.append(btn)
+        self.nav_buttons[0].setChecked(True)
+
+        sidebar_layout.addStretch()
+        main_layout.addWidget(sidebar)
+
+        # 右侧内容区域
+        self.content_stack = QStackedWidget()
+        self.content_stack.addWidget(self.create_conversion_tab())
+        self.content_stack.addWidget(self.create_settings_tab())
+        self.content_stack.addWidget(self.create_about_tab())
+        main_layout.addWidget(self.content_stack)
 
         # 状态栏
         self.statusBar().showMessage("就绪")
+
+    def switch_page(self, index):
+        """切换右侧内容页面"""
+        self.content_stack.setCurrentIndex(index)
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == index)
+        page_names = ["文件转换", "设置", "关于"]
+        self.statusBar().showMessage(f"当前页面: {page_names[index]}")
 
     def get_logo_path(self):
         """
@@ -753,22 +785,28 @@ class ModernUI(QMainWindow):
             QCheckBox:disabled {
                 color: #777777;
             }
-            QTabWidget::pane {
-                border: 1px solid #555555;
-                background-color: #2b2b2b;
+            QFrame#sidebar {
+                background-color: #252525;
+                border-right: 1px solid #555555;
             }
-            QTabBar::tab {
+            QPushButton#navButton {
                 background-color: #3c3c3c;
+                border: none;
                 color: #aaaaaa;
-                padding: 8px 16px;
-                margin-right: 2px;
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 5px;
+                text-align: left;
+                margin: 4px 0px;
             }
-            QTabBar::tab:selected {
+            QPushButton#navButton:hover {
+                background-color: #4a4a4a;
+                color: #ffffff;
+            }
+            QPushButton#navButton:checked {
                 background-color: #375a7f;
-                color: white;
-            }
-            QTabBar::tab:hover:!selected {
-                background-color: #4a77a8;
+                color: #ffffff;
+                font-weight: bold;
             }
 
             QPushButton#cancelButton {
@@ -906,22 +944,28 @@ class ModernUI(QMainWindow):
             QCheckBox:disabled {
                 color: #aaaaaa;
             }
-            QTabWidget::pane {
+            QFrame#sidebar {
+                background-color: #e8e8e8;
+                border-right: 1px solid #cccccc;
+            }
+            QPushButton#navButton {
+                background-color: #ffffff;
                 border: 1px solid #cccccc;
-                background-color: #f0f0f0;
-            }
-            QTabBar::tab {
-                background-color: #e0e0e0;
                 color: #555555;
-                padding: 8px 16px;
-                margin-right: 2px;
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 5px;
+                text-align: left;
+                margin: 4px 0px;
             }
-            QTabBar::tab:selected {
+            QPushButton#navButton:hover {
+                background-color: #f0f0f0;
+                color: #333333;
+            }
+            QPushButton#navButton:checked {
                 background-color: #4a86e8;
-                color: white;
-            }
-            QTabBar::tab:hover:!selected {
-                background-color: #d0d0d0;
+                color: #ffffff;
+                font-weight: bold;
             }
 
             QPushButton#cancelButton {
