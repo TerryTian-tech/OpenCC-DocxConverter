@@ -1124,7 +1124,7 @@ class ModernUI(QMainWindow):
         self.progress_label = QLabel("准备就绪")
         self.progress_label.setAlignment(Qt.AlignCenter)
         self.log_text = QTextEdit()
-        self.log_text.setMaximumHeight(150)
+        self.log_text.setMaximumHeight(225)
         self.log_text.setReadOnly(True)
 
         progress_layout.addWidget(self.progress_bar)
