@@ -39,7 +39,9 @@
 
 **词汇转换模式：**
 - 简体 → 繁体（台湾标准）并转换为台湾常用词汇
-- 繁体（台湾标准）→ 简体并转换为中国大陆常用词汇
+- 繁体（台湾标准）→ 简体并转换为大陆常用词汇
+- 简体 → 繁体（香港标准）并转换为香港常用词汇
+- 繁体（台湾标准）→ 简体并转换为大陆常用词汇
 
 **日文汉字转换：**
 - 繁体（OpenCC 标准，旧字体）↔ 日文新字体
@@ -127,15 +129,15 @@ OpenCC-DocxConverter/
 
 | 组件 | 版本 | 说明 |
 |-----|------|-----|
-| [OpenCC](https://github.com/BYVoid/OpenCC) | 1.3.1 | 开源中文繁简转换库 |
+| [OpenCC](https://github.com/BYVoid/OpenCC) | 1.4.0 | 开源中文繁简转换库 |
 | [Python-docx](https://github.com/python-openxml/python-docx) | 1.2.0 | Word 文档处理库 |
 | [PySide6](https://www.qt.io/qt-for-python) | 6.11.0 | Qt for Python GUI 框架 |
 | [Chardet](https://github.com/chardet/chardet) | 7.4.3 | 字符编码检测库 |
-| [Certifi](https://pypi.org/project/certifi/) | 2026.5.20 | Mozilla 根证书库 |
+| [Certifi](https://pypi.org/project/certifi/) | 2026.6.17 | Mozilla 根证书库 |
 | [Ebooklib](https://github.com/aerkalov/ebooklib) | 0.20 | 读写EPUB文件Python库 |
-| [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.14.3 | HTML和XML文档解析库 |
+| [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | HTML和XML文档解析库 |
 | [lxml](https://github.com/lxml/lxml) | 6.1.1 | 大型文档和XML处理库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.5 | 《通用规范汉字表》标准转换词典|
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.9 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
