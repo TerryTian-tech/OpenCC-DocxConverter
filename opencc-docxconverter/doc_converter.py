@@ -12,27 +12,7 @@ from docx.shared import Pt, RGBColor
 from text_converter import detect_encoding, safe_read_file
 
 class DocxTraditionalSimplifiedConverter:
-    def __init__(self, log_callback, is_cancelled_callback, config='t2gov', preserve_format=True, convert_footnotes=True):
-        """
-        初始化转换器
-        -'s2t': 简体到繁体（OpenCC标准）
-        -'t2s': 繁体（OpenCC标准）到简体
-        -'s2tg': 简体到繁体（《通用规范汉字表》标准）
-        -'tg2s': 繁体（《通用规范汉字表》标准）到简体
-        -'s2tw': 简体到台湾正体
-        -'tw2s': 台湾正体到简体
-        -'s2hk': 简体到香港繁体
-        -'hk2s': 香港繁体到简体
-        -'s2twp': 简体到繁体（台湾正体标准）并转换为台湾常用词汇
-        -'tw2sp': 繁体（台湾正体标准）到简体并转换为中国大陆常用词汇
-        -'t2tw': 繁体（OpenCC标准）到台湾正体
-        -'hk2t': 香港繁体到繁体（OpenCC 标准）
-        -'t2hk': 繁体（OpenCC标准）到香港繁体
-        -'t2gov': 繁体到繁体（《通用规范汉字表》标准）
-        -'t2jp': 繁体（OpenCC标准，旧字体）到日文新字体
-        -'jp2t': 日文新字体到繁体（OpenCC标准，旧字体）
-        -'tw2t': 台湾正体到繁体（OpenCC标准）
-        """
+    def __init__(self, log_callback, is_cancelled_callback, config='s2t', preserve_format=True, convert_footnotes=True):
         self.log_callback = log_callback
         self.is_cancelled_callback = is_cancelled_callback
         self.cc = OpenCC(config)

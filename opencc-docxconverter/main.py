@@ -1059,19 +1059,21 @@ class ModernUI(QMainWindow):
         self.type_combo.addItem("繁体（OpenCC标准）到简体")
         self.type_combo.addItem("简体到繁体（《通用规范汉字表》标准）")
         self.type_combo.addItem("繁体（《通用规范汉字表》标准）到简体")
+        self.type_combo.addItem("繁体（任意标准）到繁体（《通用规范汉字表》标准）")
         self.type_combo.addItem("简体到台湾正体")
         self.type_combo.addItem("台湾正体到简体")
         self.type_combo.addItem("简体到香港繁体")
         self.type_combo.addItem("香港繁体到简体")
         self.type_combo.addItem("简体到繁体（台湾正体标准）并转换为台湾常用词汇")
-        self.type_combo.addItem("繁体（台湾正体标准）到简体并转换为中国大陆常用词汇")
+        self.type_combo.addItem("繁体（台湾正体标准）到简体并转换为大陆常用词汇")
         self.type_combo.addItem("繁体（OpenCC标准）到台湾正体")
+        self.type_combo.addItem("台湾正体到繁体（OpenCC标准）")
         self.type_combo.addItem("香港繁体到繁体（OpenCC标准）")
         self.type_combo.addItem("繁体（OpenCC标准）到香港繁体")
-        self.type_combo.addItem("繁体到繁体（《通用规范汉字表》标准）")
+        self.type_combo.addItem("简体到香港繁体（香港常用词汇）")
+        self.type_combo.addItem("香港繁体到简体（大陆常用词汇）")
         self.type_combo.addItem("繁体（OpenCC标准，旧字体）到日文新字体")
         self.type_combo.addItem("日文新字体到繁体（OpenCC标准，旧字体）")
-        self.type_combo.addItem("台湾正体到繁体（OpenCC标准）")
         type_layout.addWidget(self.type_combo)
         options_layout.addLayout(type_layout)
 
@@ -1284,19 +1286,21 @@ class ModernUI(QMainWindow):
             "繁体（OpenCC标准）到简体": "t2s",
             "简体到繁体（《通用规范汉字表》标准）": "s2tg",
             "繁体（《通用规范汉字表》标准）到简体": "tg2s",
+            "繁体（任意标准）到繁体（《通用规范汉字表》标准）": "t2gov",
             "简体到台湾正体": "s2tw",
             "台湾正体到简体": "tw2s",
             "简体到香港繁体": "s2hk",
             "香港繁体到简体": "hk2s",
             "简体到繁体（台湾正体标准）并转换为台湾常用词汇": "s2twp",
-            "繁体（台湾正体标准）到简体并转换为中国大陆常用词汇": "tw2sp",
+            "繁体（台湾正体标准）到简体并转换为大陆常用词汇": "tw2sp",
             "繁体（OpenCC标准）到台湾正体": "t2tw",
+            "台湾正体到繁体（OpenCC标准）": "tw2t",
             "香港繁体到繁体（OpenCC标准）": "hk2t",
             "繁体（OpenCC标准）到香港繁体": "t2hk",
-            "繁体到繁体（《通用规范汉字表》标准）": "t2gov",
+            "简体到香港繁体（香港常用词汇）": "s2hkp",
+            "香港繁体到简体（大陆常用词汇）": "hk2sp",
             "繁体（OpenCC标准，旧字体）到日文新字体": "t2jp",
-            "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t",
-            "台湾正体到繁体（OpenCC标准）": "tw2t"
+            "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t"
         }
         conversion_type = conversion_types[self.type_combo.currentText()]
 
