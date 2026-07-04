@@ -1,5 +1,13 @@
 {
-  "name": "Traditional Chinese to Traditional Chinese (Taiwan standard)",
+  "name": "Traditional Chinese (OpenCC Standard) to Traditional Chinese (Taiwan Standard)",
+  "normalization": [
+    {
+      "dict": {
+        "type": "ocd2",
+        "file": "CJK_Compatibility_Ideographs.ocd2"
+      }
+    }
+  ],
   "segmentation": {
     "type": "jieba",
     "resources": {
@@ -8,10 +16,22 @@
       "user_dict_path": "jieba_dict/user.dict.utf8"
     }
   },
-  "conversion_chain": [{
-    "dict": {
-      "type": "ocd2",
-      "file": "TWVariants.ocd2"
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "match_policy": "short_circuit",
+        "dicts": [
+          {
+            "type": "ocd2",
+            "file": "TWVariantsPhrases.ocd2"
+          },
+          {
+            "type": "ocd2",
+            "file": "TWVariants.ocd2"
+          }
+        ]
+      }
     }
-  }]
+  ]
 }

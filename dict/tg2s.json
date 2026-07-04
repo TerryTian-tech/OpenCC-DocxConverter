@@ -1,22 +1,18 @@
 {
   "name": "Traditional Chinese to Simplified Chinese",
-  "segmentation": {
-    "type": "mmseg",
-    "dict": {
-      "type": "ocd2",
-      "file": "TGSPhrases.ocd2"
+  "normalization": [
+    { "dict": { "type": "ocd2", "file": "CJK_Compatibility_Ideographs.ocd2" } }
+  ],
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "match_policy": "short_circuit",
+        "dicts": [
+          { "type": "ocd2", "file": "TGSPhrases.ocd2" },
+          { "type": "ocd2", "file": "TGSCharacters.ocd2" }
+        ]
+      }
     }
-  },
-  "conversion_chain": [{
-    "dict": {
-      "type": "group",
-      "dicts": [{
-        "type": "ocd2",
-        "file": "TGSPhrases.ocd2"
-      }, {
-        "type": "ocd2",
-        "file": "TGSCharacters.ocd2"
-      }]
-    }
-  }]
+  ]
 }

@@ -1,22 +1,18 @@
 {
   "name": "Traditional Chinese to Traditional Chinese (Chinese Government standard)",
-  "segmentation": {
-    "type": "mmseg",
-    "dict": {
-      "type": "ocd2",
-      "file": "TGPhrases.ocd2"
+  "normalization": [
+    { "dict": { "type": "ocd2", "file": "CJK_Compatibility_Ideographs.ocd2" } }
+  ],
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "match_policy": "short_circuit",
+        "dicts": [
+          { "type": "ocd2", "file": "TGPhrases.ocd2" },
+          { "type": "ocd2", "file": "TGCharacters.ocd2" }
+        ]
+      }
     }
-  },
-  "conversion_chain": [{
-    "dict": {
-      "type": "group",
-      "dicts": [{
-        "type": "ocd2",
-        "file": "TGPhrases.ocd2"
-      }, {
-        "type": "ocd2",
-        "file": "TGCharacters.ocd2"
-      }]
-    }
-  }]
+  ]
 }

@@ -1,5 +1,8 @@
 {
   "name": "Simplified Chinese to Traditional Chinese (The Chinese Government Standard)",
+  "normalization": [
+    { "dict": { "type": "ocd2", "file": "CJK_Compatibility_Ideographs.ocd2" } }
+  ],
   "segmentation": {
     "type": "jieba",
     "resources": {
@@ -8,16 +11,16 @@
       "user_dict_path": "jieba_dict/user.dict.traditional.utf8"
     }
   },
-  "conversion_chain": [{
-    "dict": {
-      "type": "group",
-      "dicts": [{
-        "type": "ocd2",
-        "file": "STGPhrases.ocd2"
-      }, {
-        "type": "ocd2",
-        "file": "STGCharacters.ocd2"
-      }]
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "match_policy": "short_circuit",
+        "dicts": [
+          { "type": "ocd2", "file": "STGPhrases.ocd2" },
+          { "type": "ocd2", "file": "STGCharacters.ocd2" }
+        ]
+      }
     }
-  }]
+  ]
 }

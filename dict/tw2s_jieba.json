@@ -1,5 +1,13 @@
 {
-  "name": "Traditional Chinese (Taiwan standard) to Simplified Chinese",
+  "name": "Traditional Chinese (Taiwan Standard) to Simplified Chinese",
+  "normalization": [
+    {
+      "dict": {
+        "type": "ocd2",
+        "file": "CJK_Compatibility_Ideographs.ocd2"
+      }
+    }
+  ],
   "segmentation": {
     "type": "jieba",
     "resources": {
@@ -8,27 +16,43 @@
       "user_dict_path": "jieba_dict/user.dict.utf8"
     }
   },
-  "conversion_chain": [{
-    "dict": {
-      "type": "group",
-      "dicts": [{
-        "type": "ocd2",
-        "file": "TWVariantsRevPhrases.ocd2"
-      }, {
-        "type": "ocd2",
-        "file": "TWVariantsRev.ocd2"
-      }] 
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "match_policy": "short_circuit",
+        "dicts": [
+          {
+            "type": "ocd2",
+            "file": "TWVariantsRevPhrases.ocd2"
+          },
+          {
+            "type": "ocd2",
+            "file": "TWVariantsRev.ocd2"
+          }
+        ]
+      }
+    },
+    {
+      "dict": {
+        "type": "group",
+        "match_policy": "short_circuit",
+        "dicts": [
+          {
+            "type": "ocd2",
+            "file": "TSPhrases.ocd2"
+          },
+          {
+            "type": "ocd2",
+            "file": "TSCharactersExt.ocd2",
+            "may_output_tofu": true
+          },
+          {
+            "type": "ocd2",
+            "file": "TSCharacters.ocd2"
+          }
+        ]
+      }
     }
-  }, {
-    "dict": {
-      "type": "group",
-      "dicts": [{
-        "type": "ocd2",
-        "file": "TSPhrases.ocd2"
-      }, {
-        "type": "ocd2",
-        "file": "TSCharacters.ocd2"
-      }]
-    }
-  }]
+  ]
 }

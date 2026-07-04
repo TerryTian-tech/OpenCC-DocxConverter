@@ -1,17 +1,19 @@
 {
-  "name": "Traditional Chinese Characters (Kyūjitai) to New Japanese Kanji (Shinjitai)",
-  "segmentation": {
-    "type": "jieba",
-    "resources": {
-      "dict_path": "jieba_dict/jieba.dict.ancient.chinese.traditional.utf8",
-      "model_path": "jieba_dict/hmm_model.utf8",
-      "user_dict_path": "jieba_dict/user.dict.traditional.utf8"
+  "name": "Old Japanese Kanji (Kyūjitai) to New Japanese Kanji (Shinjitai)",
+  "normalization": [
+    {
+      "dict": {
+        "type": "ocd2",
+        "file": "CJK_Compatibility_Ideographs.ocd2"
+      }
     }
-  },
-  "conversion_chain": [{
-    "dict": {
-      "type": "ocd2",
-      "file": "JPVariants.ocd2"
+  ],
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "ocd2",
+        "file": "JPShinjitaiCharactersRev.ocd2"
+      }
     }
-  }]
+  ]
 }
