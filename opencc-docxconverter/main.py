@@ -1166,6 +1166,7 @@ class ModernUI(QMainWindow):
               <p>镜像2（GitCode）：https://gitcode.com/TerryTian-tech/OpenCC-DocxConverter
         </ul>
         <p><b>本软件遵循Apache-2.0开源协议发布。</p>
+        <p>交流繁简转换相关问题可进QQ群：1055649831。</p>
         """)
         desc_label.setWordWrap(True)
         desc_label.setAlignment(Qt.AlignLeft)

@@ -23,7 +23,7 @@
 
 ### 丰富的转换标准
 
-程序内置 17 种转换模式，覆盖主流的繁简转换需求：
+程序内置 19 种转换模式，覆盖主流的繁简转换需求：
 
 **基础转换模式：**
 - 简体 → 繁体（OpenCC 标准）
@@ -139,7 +139,7 @@ OpenCC-DocxConverter/
 | [Ebooklib](https://github.com/aerkalov/ebooklib) | 0.20 | 读写EPUB文件Python库 |
 | [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | HTML和XML文档解析库 |
 | [lxml](https://github.com/lxml/lxml) | 6.1.1 | 大型文档和XML处理库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.9 | 《通用规范汉字表》标准转换词典|
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.3.10 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
