@@ -1,5 +1,10 @@
 # OpenCC File Converter 简繁通转换大师 
 
+[![GitHub downloads](https://img.shields.io/github/downloads/TerryTian-tech/OpenCC-DocxConverter/total?style=flat-square)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/TerryTian-tech/OpenCC-DocxConverter?style=flat-square&color=bc8cff&labelColor=161b22)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/stargazers)
+
+## 仓库介绍
 **简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持Word文档（DOCX）、文本文件（TXT）、电子书（EPUB）和字幕文件（SRT、ASS/SSA、LRC）的转换。
 
 本工具不仅支持简体与繁体之间的相互转换，也支持陆、台、港三地的繁体标准互相转换，并提供词汇级别的智能转换能力，能够准确处理地域间的异体字和词汇差异。
