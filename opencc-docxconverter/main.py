@@ -130,8 +130,7 @@ class ConversionWorker(QThread):
                     if convert_srt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled,
-                        self.force_encoding
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
@@ -139,8 +138,7 @@ class ConversionWorker(QThread):
                     if convert_ass_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled,
-                        self.force_encoding
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
@@ -148,8 +146,7 @@ class ConversionWorker(QThread):
                     if convert_lrc_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled,
-                        self.force_encoding
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
@@ -211,8 +208,7 @@ class ConversionWorker(QThread):
                 result = convert_srt_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled,
-                    self.force_encoding
+                    lambda: self._is_cancelled
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -223,8 +219,7 @@ class ConversionWorker(QThread):
                 result = convert_ass_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled,
-                    self.force_encoding
+                    lambda: self._is_cancelled
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -235,8 +230,7 @@ class ConversionWorker(QThread):
                 result = convert_lrc_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled,
-                    self.force_encoding
+                    lambda: self._is_cancelled
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -321,8 +315,7 @@ class ConversionWorker(QThread):
                     if convert_srt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled,
-                        self.force_encoding
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
@@ -330,8 +323,7 @@ class ConversionWorker(QThread):
                     if convert_ass_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled,
-                        self.force_encoding
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
@@ -339,8 +331,7 @@ class ConversionWorker(QThread):
                     if convert_lrc_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled,
-                        self.force_encoding
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
                 elif file_ext == '.epub':
