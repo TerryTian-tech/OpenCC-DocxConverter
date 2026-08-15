@@ -80,8 +80,12 @@
 - 转换后清除分词标记
 - 结巴分词预置现代汉语和古代汉语分词词典
 
-## 安装与运行
+**自定义转换表：**
+- 可指定一个转换类型应用自定义规则，自定义规则先于内置词典生效
+- 规则格式简单直观：每行一条 `原词→目标词`，支持从文件导入、导出
+- 基于 OpenCC 内联字典（inline dictionary）实现，无需修改任何内置配置或词典文件
 
+## 安装与运行
 ### 方式一：下载发行版（ Windows 10/11 ）
 
 直接从 [Releases](https://github.com/TerryTian-tech/OpenCC-DocxConverter/releases) 页面下载对应平台的压缩包，解压后即可运行，无需配置 Python 环境。
@@ -122,6 +126,7 @@ OpenCC-DocxConverter/
 │   ├── doc_converter.py      # Word文档(DOCX)转换模块
 │   ├── text_converter.py     # 文本文件(TXT/SRT/ASS/SSA/LRC)转换模块
 │   ├── epub_converter.py     # 电子书文件(EPUB)转换模块
+|   ├── custom_dict.py        # 自定义词典模块
 │   ├── updater.py            # 更新检查模块
 │   ├── constants.py          # 版本常量
 │   ├── requirements.txt      # Python 依赖列表
