@@ -3,17 +3,43 @@ import sys
 import tempfile
 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-                             QPushButton, QTextEdit, QFileDialog, QLabel, QProgressBar,
-                             QMessageBox, QGroupBox, QComboBox, QCheckBox, QLineEdit,
-                             QStyleFactory, QStackedWidget, QFrame)
+                             QPushButton, QTextEdit, QPlainTextEdit, QFileDialog, QLabel,
+                             QProgressBar, QMessageBox, QGroupBox, QComboBox, QCheckBox,
+                             QLineEdit, QStyleFactory, QStackedWidget, QFrame, QScrollArea)
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import QIcon, QColor, QPalette
+
+from opencc import OpenCC
 
 from constants import VERSION
 from updater import UpdateChecker
 from text_converter import convert_txt_file, convert_srt_file, convert_ass_file, convert_lrc_file
 from doc_converter import convert_docx_file
 from epub_converter import convert_epub_file
+from custom_dict import parse_custom_entries, build_custom_config_file
+
+# 转换类型显示名 -> OpenCC 配置名
+CONVERSION_TYPES = {
+    "简体到繁体（OpenCC标准）": "s2t",
+    "繁体（OpenCC标准）到简体": "t2s",
+    "简体到繁体（《通用规范汉字表》标准）": "s2tg",
+    "繁体（《通用规范汉字表》标准）到简体": "tg2s",
+    "繁体（任意标准）到繁体（《通用规范汉字表》标准）": "t2gov",
+    "简体到台湾正体": "s2tw",
+    "台湾正体到简体": "tw2s",
+    "简体到香港繁体": "s2hk",
+    "香港繁体到简体": "hk2s",
+    "简体到繁体（台湾正体标准）并转换为台湾常用词汇": "s2twp",
+    "繁体（台湾正体标准）到简体并转换为大陆常用词汇": "tw2sp",
+    "繁体（OpenCC标准）到台湾正体": "t2tw",
+    "台湾正体到繁体（OpenCC标准）": "tw2t",
+    "香港繁体到繁体（OpenCC标准）": "hk2t",
+    "繁体（OpenCC标准）到香港繁体": "t2hk",
+    "简体到香港繁体（香港常用词汇）": "s2hkp",
+    "香港繁体到简体（大陆常用词汇）": "hk2sp",
+    "繁体（OpenCC标准，旧字体）到日文新字体": "t2jp",
+    "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t"
+}
 
 class ConversionWorker(QThread):
     """
@@ -24,7 +50,8 @@ class ConversionWorker(QThread):
     log_message = Signal(str)  # 日志消息信号
 
     def __init__(self, input_path, output_folder, conversion_type='s2t', preserve_format=True,
-                 convert_footnotes=True, force_encoding=None, segment_mode=None, input_paths=None):
+                 convert_footnotes=True, force_encoding=None, segment_mode=None, input_paths=None,
+                 custom_config_path=None):
         super().__init__()
         self.input_path = input_path
         self.output_folder = output_folder
@@ -34,16 +61,23 @@ class ConversionWorker(QThread):
         self.force_encoding = force_encoding
         self.segment_mode = segment_mode
         self.input_paths = input_paths
+        self.custom_config_path = custom_config_path
         self._is_cancelled = False
-
-        # 根据分词模式自动调整OpenCC配置名称
-        if self.segment_mode == 'jieba_modern':
-            self.conversion_type += '_jieba'
-        elif self.segment_mode == 'jieba_ancient':
-            self.conversion_type += '_jieba_traditional'
 
     def run(self):
         try:
+            # 校验自定义转换表配置（在后台线程加载，失败时给出明确错误信息）
+            if self.custom_config_path:
+                try:
+                    OpenCC(self.custom_config_path)
+                except Exception as e:
+                    self.log_message.emit(f"自定义转换表配置加载失败: {e}")
+                    self.conversion_finished.emit(False, f"自定义转换表配置加载失败：{e}", 0, 0)
+                    return
+                self.log_message.emit("自定义转换表配置加载成功")
+                # 使用生成的临时配置进行转换（内含自定义内联字典）
+                self.conversion_type = self.custom_config_path
+
             self._success_count = 0
             self._total_files = 0
             success = self.process_files()
@@ -69,6 +103,16 @@ class ConversionWorker(QThread):
                     self.conversion_finished.emit(False, "转换过程中出现错误", 0, 1)
         except Exception as e:
             self.conversion_finished.emit(False, f"转换失败: {str(e)}", 0, 0)
+        finally:
+            self._cleanup_custom_config()
+
+    def _cleanup_custom_config(self):
+        """删除本次转换生成的临时自定义配置文件"""
+        if self.custom_config_path and os.path.exists(self.custom_config_path):
+            try:
+                os.remove(self.custom_config_path)
+            except OSError:
+                pass
 
     def cancel(self):
         """取消转换"""
@@ -464,7 +508,18 @@ class ModernUI(QMainWindow):
     def create_settings_tab(self):
         """创建设置选项卡"""
         tab = QWidget()
-        layout = QVBoxLayout(tab)
+        outer_layout = QVBoxLayout(tab)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 设置项较多时允许滚动，避免内容被裁剪
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        outer_layout.addWidget(scroll)
+
+        inner = QWidget()
+        scroll.setWidget(inner)
+        layout = QVBoxLayout(inner)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(20)
 
@@ -588,6 +643,79 @@ class ModernUI(QMainWindow):
 
         layout.addWidget(segment_group)
 
+        # 自定义转换表设置区域
+        custom_group = QGroupBox("自定义转换表")
+        custom_layout = QVBoxLayout(custom_group)
+        custom_layout.setSpacing(12)
+        custom_layout.setContentsMargins(15, 20, 15, 15)
+
+        # 自定义转换表说明
+        custom_desc = QLabel(
+            "每一行一条规则，格式：原词→目标词（也支持 =、=> 或 Tab 分隔）。\n"
+            "以 # 或 // 开头的行视为注释，空行自动忽略。\n"
+            "注意：规则中的原词不可重复，否则无法加载。"
+        )
+        custom_desc.setWordWrap(True)
+        custom_layout.addWidget(custom_desc)
+
+        self.custom_dict_cb = QCheckBox("启用自定义转换表")
+        self.custom_dict_cb.stateChanged.connect(self.on_custom_dict_enabled_changed)
+        custom_layout.addWidget(self.custom_dict_cb)
+
+        # 应用转换类型选择（单选，指定本转换表作用于哪个转换类型）
+        apply_type_layout = QHBoxLayout()
+        apply_type_layout.setSpacing(10)
+        apply_type_layout.addWidget(QLabel("应用转换类型:"))
+        self.custom_dict_type_combo = QComboBox()
+        for display_name, config_name in CONVERSION_TYPES.items():
+            self.custom_dict_type_combo.addItem(display_name, config_name)
+        self.custom_dict_type_combo.setToolTip(
+            "自定义转换表仅在该转换类型下生效；\n"
+            "使用其他转换类型转换时，本表不会参与。"
+        )
+        self.custom_dict_type_combo.currentIndexChanged.connect(self.on_custom_dict_type_changed)
+        apply_type_layout.addWidget(self.custom_dict_type_combo, 1)
+        apply_type_layout.addStretch()
+        custom_layout.addLayout(apply_type_layout)
+
+        self.custom_dict_edit = QPlainTextEdit()
+        self.custom_dict_edit.setPlaceholderText(
+            "每一行一条规则：原词→目标词\n例如：服务器→伺服器"
+        )
+        self.custom_dict_edit.setMaximumHeight(180)
+        self.custom_dict_edit.textChanged.connect(self.on_custom_dict_text_changed)
+        custom_layout.addWidget(self.custom_dict_edit)
+
+        custom_btn_layout = QHBoxLayout()
+        import_btn = QPushButton("从文件导入")
+        import_btn.setObjectName("browseButton")
+        import_btn.clicked.connect(self.import_custom_dict)
+        export_btn = QPushButton("导出到文件")
+        export_btn.setObjectName("browseButton")
+        export_btn.clicked.connect(self.export_custom_dict)
+        custom_btn_layout.addWidget(import_btn)
+        custom_btn_layout.addWidget(export_btn)
+        custom_btn_layout.addStretch()
+        custom_layout.addLayout(custom_btn_layout)
+
+        # 从设置中恢复自定义转换表（默认关闭，编辑器默认只显示注释示例）
+        self.custom_dict_cb.setChecked(self.settings.value("custom_dict_enabled", False, type=bool))
+        saved_apply_type = self.settings.value("custom_dict_apply_type", "s2t")
+        apply_index = self.custom_dict_type_combo.findData(saved_apply_type)
+        if apply_index >= 0:
+            self.custom_dict_type_combo.setCurrentIndex(apply_index)
+        saved_entries = self.settings.value("custom_dict_entries", "")
+        if saved_entries:
+            self.custom_dict_edit.setPlainText(saved_entries)
+        else:
+            self.custom_dict_edit.setPlainText(
+                "# 示例（删除“# ”后方可生效）：\n"
+                "# 服务器→伺服器\n"
+                "# 麦旋风→冰炫風\n"
+            )
+
+        layout.addWidget(custom_group)
+
         layout.addStretch()
         return tab
 
@@ -634,6 +762,59 @@ class ModernUI(QMainWindow):
         self.settings.setValue("encoding_index", index)
         encoding_name = self.encoding_combo.currentText()
         self.statusBar().showMessage(f"编码设置已更改为: {encoding_name}")
+
+    def on_custom_dict_enabled_changed(self, state):
+        """自定义转换表启用开关更改事件处理"""
+        enabled = state == Qt.CheckState.Checked.value
+        self.settings.setValue("custom_dict_enabled", enabled)
+        self.statusBar().showMessage("自定义转换表已启用" if enabled else "自定义转换表已禁用")
+
+    def on_custom_dict_text_changed(self):
+        """自定义转换表内容更改事件处理"""
+        self.settings.setValue("custom_dict_entries", self.custom_dict_edit.toPlainText())
+
+    def on_custom_dict_type_changed(self, index):
+        """自定义转换表应用类型更改事件处理"""
+        config_name = self.custom_dict_type_combo.itemData(index)
+        self.settings.setValue("custom_dict_apply_type", config_name)
+        self.statusBar().showMessage(f"自定义转换表将应用于: {self.custom_dict_type_combo.currentText()}")
+
+    def import_custom_dict(self):
+        """从文件导入自定义转换表"""
+        path, _ = QFileDialog.getOpenFileName(
+            self, "导入自定义转换表", "",
+            "文本文件 (*.txt *.csv *.json);;所有文件 (*)"
+        )
+        if not path:
+            return
+        for encoding in ('utf-8-sig', 'gb18030'):
+            try:
+                with open(path, 'r', encoding=encoding) as f:
+                    content = f.read()
+                break
+            except (UnicodeDecodeError, UnicodeError):
+                continue
+        else:
+            QMessageBox.warning(self, "导入失败", "无法读取文件内容（编码不受支持）")
+            return
+        self.custom_dict_edit.setPlainText(content)
+        self.statusBar().showMessage(f"已从文件导入自定义转换表: {os.path.basename(path)}")
+
+    def export_custom_dict(self):
+        """将自定义转换表导出到文件"""
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出自定义转换表", "custom_dict.txt",
+            "文本文件 (*.txt);;所有文件 (*)"
+        )
+        if not path:
+            return
+        try:
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(self.custom_dict_edit.toPlainText())
+        except Exception as e:
+            QMessageBox.critical(self, "导出失败", f"保存文件失败：{e}")
+            return
+        self.statusBar().showMessage(f"自定义转换表已导出至: {path}")
 
     def on_theme_changed(self, theme, state):
         """主题更改事件处理（复选框互斥逻辑）"""
@@ -992,6 +1173,10 @@ class ModernUI(QMainWindow):
         else:
             segment_mode = 'none'
         self.settings.setValue("segment_mode", segment_mode)
+        # 保存自定义转换表设置
+        self.settings.setValue("custom_dict_enabled", self.custom_dict_cb.isChecked())
+        self.settings.setValue("custom_dict_entries", self.custom_dict_edit.toPlainText())
+        self.settings.setValue("custom_dict_apply_type", self.custom_dict_type_combo.currentData())
 
     def create_conversion_tab(self):
         """创建转换选项卡"""
@@ -1273,28 +1458,7 @@ class ModernUI(QMainWindow):
                 return
 
         # 获取转换类型
-        conversion_types = {
-            "简体到繁体（OpenCC标准）": "s2t",
-            "繁体（OpenCC标准）到简体": "t2s",
-            "简体到繁体（《通用规范汉字表》标准）": "s2tg",
-            "繁体（《通用规范汉字表》标准）到简体": "tg2s",
-            "繁体（任意标准）到繁体（《通用规范汉字表》标准）": "t2gov",
-            "简体到台湾正体": "s2tw",
-            "台湾正体到简体": "tw2s",
-            "简体到香港繁体": "s2hk",
-            "香港繁体到简体": "hk2s",
-            "简体到繁体（台湾正体标准）并转换为台湾常用词汇": "s2twp",
-            "繁体（台湾正体标准）到简体并转换为大陆常用词汇": "tw2sp",
-            "繁体（OpenCC标准）到台湾正体": "t2tw",
-            "台湾正体到繁体（OpenCC标准）": "tw2t",
-            "香港繁体到繁体（OpenCC标准）": "hk2t",
-            "繁体（OpenCC标准）到香港繁体": "t2hk",
-            "简体到香港繁体（香港常用词汇）": "s2hkp",
-            "香港繁体到简体（大陆常用词汇）": "hk2sp",
-            "繁体（OpenCC标准，旧字体）到日文新字体": "t2jp",
-            "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t"
-        }
-        conversion_type = conversion_types[self.type_combo.currentText()]
+        conversion_type = CONVERSION_TYPES[self.type_combo.currentText()]
 
         # 获取转换选项的实际值
         preserve_format = self.preserve_format_cb.isChecked()
@@ -1310,6 +1474,48 @@ class ModernUI(QMainWindow):
             segment_mode = 'jieba_ancient'
         else:
             segment_mode = None
+
+        # 根据分词模式自动调整OpenCC配置名称
+        if segment_mode == 'jieba_modern':
+            conversion_type += '_jieba'
+        elif segment_mode == 'jieba_ancient':
+            conversion_type += '_jieba_traditional'
+
+        # 生成自定义转换表配置（启用且与指定应用类型匹配时）
+        custom_config_path = None
+        custom_entries_count = 0
+        custom_dict_display = "未启用"
+        if self.custom_dict_cb.isChecked():
+            # 当前转换类型的基础名称（去掉分词后缀，如 s2t_jieba -> s2t）
+            base_type = conversion_type
+            for suffix in ('_jieba_traditional', '_jieba'):
+                if base_type.endswith(suffix):
+                    base_type = base_type[:-len(suffix)]
+                    break
+
+            apply_type = self.custom_dict_type_combo.currentData()
+            if base_type != apply_type:
+                custom_dict_display = f"未应用（仅应用于“{self.custom_dict_type_combo.currentText()}”）"
+            else:
+                try:
+                    custom_entries = parse_custom_entries(self.custom_dict_edit.toPlainText())
+                except ValueError as e:
+                    QMessageBox.warning(self, "自定义转换表格式错误", str(e))
+                    return
+                if not custom_entries:
+                    QMessageBox.warning(
+                        self, "自定义转换表",
+                        "未填写任何有效的自定义规则（示例行以 # 开头，需取消注释后生效；\n"
+                        "每一行一条：原词→目标词）"
+                    )
+                    return
+                try:
+                    custom_config_path = build_custom_config_file(conversion_type, custom_entries)
+                except Exception as e:
+                    QMessageBox.critical(self, "自定义转换表", f"生成自定义转换配置失败：{e}")
+                    return
+                custom_entries_count = len(custom_entries)
+                custom_dict_display = f"启用（{custom_entries_count}条规则）"
 
         # 如果已有转换线程在运行，先取消并等待其结束
         if hasattr(self, 'worker') and self.worker.isRunning():
@@ -1328,18 +1534,29 @@ class ModernUI(QMainWindow):
             'jieba_modern': '结巴分词（现代汉语）',
             'jieba_ancient': '结巴分词（古汉语）'
         }
-        self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}，强制编码={force_encoding or '自动'}，分词模式={segment_mode_display.get(segment_mode, '不分词')}")
+        self.append_log(f"转换设置：保留格式={preserve_format}，转换脚注={convert_footnotes}，强制编码={force_encoding or '自动'}，分词模式={segment_mode_display.get(segment_mode, '不分词')}，自定义转换表={custom_dict_display}")
 
-        self.worker = ConversionWorker(
-            input_path,
-            output_path,
-            conversion_type,
-            preserve_format,  # 使用复选框的实际值
-            convert_footnotes,  # 使用复选框的实际值
-            force_encoding,
-            segment_mode,
-            input_paths=self.selected_files if self.selected_files else None
-        )
+        try:
+            self.worker = ConversionWorker(
+                input_path,
+                output_path,
+                conversion_type,
+                preserve_format,  # 使用复选框的实际值
+                convert_footnotes,  # 使用复选框的实际值
+                force_encoding,
+                segment_mode,
+                input_paths=self.selected_files if self.selected_files else None,
+                custom_config_path=custom_config_path
+            )
+        except Exception as e:
+            # 如果线程启动失败，清理已生成的临时配置文件并提示
+            if custom_config_path and os.path.exists(custom_config_path):
+                try:
+                    os.remove(custom_config_path)
+                except OSError:
+                    pass
+            QMessageBox.critical(self, "错误", f"启动转换线程失败：{e}")
+            return
         self.worker.progress_updated.connect(self.update_progress)
         self.worker.conversion_finished.connect(self.conversion_finished)
         self.worker.log_message.connect(self.append_log)
