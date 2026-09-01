@@ -160,13 +160,21 @@ class ConversionWorker(QThread):
                     except Exception as e:
                         self.log_message.emit(f"处理 {os.path.basename(file_path)} 时出错: {str(e)}")
 
-                elif file_ext in ['.txt', '.md']:
+                elif file_ext == '.txt':
                     if convert_txt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
                         lambda: self._is_cancelled,
                         self.force_encoding,
                         self.segment_mode
+                    ):
+                        success_count += 1
+
+                elif file_ext == '.md':
+                    if convert_txt_file(
+                        file_path, self.output_folder, self.conversion_type,
+                        lambda msg: self.log_message.emit(msg),
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
@@ -235,13 +243,24 @@ class ConversionWorker(QThread):
                     return True
                 else:
                     return False
-            elif file_ext in ['.txt', '.md']:
+            elif file_ext == '.txt':
                 result = convert_txt_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
                     lambda: self._is_cancelled,
                     self.force_encoding,
                     self.segment_mode
+                )
+                if result:
+                    self.progress_updated.emit(100, "转换完成!")
+                    return True
+                else:
+                    return False
+            elif file_ext == '.md':
+                result = convert_txt_file(
+                    self.input_path, self.output_folder, self.conversion_type,
+                    lambda msg: self.log_message.emit(msg),
+                    lambda: self._is_cancelled
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -345,13 +364,21 @@ class ConversionWorker(QThread):
                     except Exception as e:
                         self.log_message.emit(f"处理 {filename} 时出错: {str(e)}")
 
-                elif file_ext in ['.txt', '.md']:
+                elif file_ext == '.txt':
                     if convert_txt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
                         lambda: self._is_cancelled,
                         self.force_encoding,
                         self.segment_mode
+                    ):
+                        success_count += 1
+
+                elif file_ext == '.md':
+                    if convert_txt_file(
+                        file_path, self.output_folder, self.conversion_type,
+                        lambda msg: self.log_message.emit(msg),
+                        lambda: self._is_cancelled
                     ):
                         success_count += 1
 
