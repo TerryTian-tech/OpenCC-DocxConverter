@@ -174,7 +174,8 @@ class ConversionWorker(QThread):
                     if convert_txt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled
+                        lambda: self._is_cancelled,
+                        segment_mode=self.segment_mode
                     ):
                         success_count += 1
 
@@ -260,7 +261,8 @@ class ConversionWorker(QThread):
                 result = convert_txt_file(
                     self.input_path, self.output_folder, self.conversion_type,
                     lambda msg: self.log_message.emit(msg),
-                    lambda: self._is_cancelled
+                    lambda: self._is_cancelled,
+                    segment_mode=self.segment_mode
                 )
                 if result:
                     self.progress_updated.emit(100, "转换完成!")
@@ -378,7 +380,8 @@ class ConversionWorker(QThread):
                     if convert_txt_file(
                         file_path, self.output_folder, self.conversion_type,
                         lambda msg: self.log_message.emit(msg),
-                        lambda: self._is_cancelled
+                        lambda: self._is_cancelled,
+                        segment_mode=self.segment_mode
                     ):
                         success_count += 1
 
