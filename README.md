@@ -146,8 +146,8 @@ OpenCC-DocxConverter/
 | [Chardet](https://github.com/chardet/chardet) | 7.6.0 | 字符编码检测库 |
 | [Certifi](https://pypi.org/project/certifi/) | 2026.7.22 | Mozilla 根证书库 |
 | [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | HTML和XML文档解析库 |
-| [lxml](https://github.com/lxml/lxml) | 6.1.2 | 大型文档和XML处理库 |
-| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.4.1 | 《通用规范汉字表》标准转换词典|
+| [lxml](https://github.com/lxml/lxml) | 6.1.3 | 大型文档和XML处理库 |
+| [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.4.2 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
 
