@@ -150,7 +150,7 @@ OpenCC-DocxConverter/
 | [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | HTML和XML文档解析库 |
 | [lxml](https://github.com/lxml/lxml) | 6.1.3 | 大型文档和XML处理库 |
 | [pdf-oxide](https://pypi.org/project/pdf-oxide/) | 0.3.78 | PDF 文件解析与重建库 |
-| [Pillow](https://python-pillow.github.io/) | 12.0.0 | 图像处理库（用于 PDF 扫描页栅格化保留） |
+| [Pillow](https://python-pillow.github.io/) | 12.3.0 | 图像处理库（用于 PDF 扫描页栅格化保留） |
 | [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.4.2 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
