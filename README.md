@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/TerryTian-tech/OpenCC-DocxConverter?style=flat-square&color=bc8cff&labelColor=161b22)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/stargazers)
 
-**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持Word文档（DOCX）、文本文件（TXT、MD）、电子书（EPUB）和字幕文件（SRT、ASS/SSA、LRC）的转换。
+**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持 Word 文档（DOCX）、文本文件（TXT、MD）、电子书（EPUB）、PD和字幕文件（SRT、ASS/SSA、LRC）的转换。此外，从 1.2.6 版本开始，有限支持 PDF 文件的转换。
 
 本工具不仅支持简体与繁体之间的相互转换，也支持陆、台、港三地的繁体标准互相转换，并提供词汇级别的智能转换能力，能够准确处理地域间的异体字和词汇差异。
 
@@ -21,6 +21,7 @@
 | **DOCX** | Microsoft Word 文档 | 保留原有格式、排版，可选择是否转换页眉页脚、脚注尾注 |
 | **TXT** | 纯文本文件 | 自动检测编码并转换为 UTF-8 |
 | **EPUB** | 电子书文件 | 转换文本内容 |
+| **PDF** | PDF | 有限支持：按原版式重建，保留文字位置、字号、颜色、图片和矢量图形，不支持扫描件 |
 | **SRT** | SubRip 字幕文件 | 保留时间码，支持 ASS/SSA 样式标签 |
 | **ASS/SSA** | Advanced SubStation Alpha 字幕 | 保留样式定义，仅转换对话文本 |
 | **LRC** | 歌词文件 | 保留时间标签和增强型标签 |
@@ -104,7 +105,7 @@ $null = New-Item -ItemType Directory -Path $dest -Force; Copy-Item -Path "..\jie
 python main.py
 ```
 
-在 Linux 发行版和 Mac 下，使用者需预先部署 Python 运行环境，然后打开终端，执行以下命令安装依赖并运行：
+在 Linux 发行版下，使用者需预先部署 Python 运行环境，然后打开终端，执行以下命令安装依赖并运行：
 
 ```bash
 git clone https://github.com/TerryTian-tech/OpenCC-DocxConverter.git
@@ -126,7 +127,8 @@ OpenCC-DocxConverter/
 │   ├── doc_converter.py      # Word文档(DOCX)转换模块
 │   ├── text_converter.py     # 文本文件(TXT/SRT/ASS/SSA/LRC)转换模块
 │   ├── epub_converter.py     # 电子书文件(EPUB)转换模块
-|   ├── custom_dict.py        # 自定义词典模块
+│   ├── pdf_converter.py      # PDF文件转换模块
+│   ├── custom_dict.py        # 自定义词典模块
 │   ├── updater.py            # 更新检查模块
 │   ├── constants.py          # 版本常量
 │   ├── requirements.txt      # Python 依赖列表
@@ -147,6 +149,8 @@ OpenCC-DocxConverter/
 | [Certifi](https://pypi.org/project/certifi/) | 2026.7.22 | Mozilla 根证书库 |
 | [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | HTML和XML文档解析库 |
 | [lxml](https://github.com/lxml/lxml) | 6.1.3 | 大型文档和XML处理库 |
+| [pdf-oxide](https://pypi.org/project/pdf-oxide/) | 0.3.78 | PDF 文件解析与重建库 |
+| [Pillow](https://python-pillow.github.io/) | 12.0.0 | 图像处理库（用于 PDF 扫描页栅格化保留） |
 | [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.4.2 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全

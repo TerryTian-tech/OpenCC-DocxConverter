@@ -16,6 +16,7 @@ from updater import UpdateChecker
 from text_converter import convert_txt_file, convert_srt_file, convert_ass_file, convert_lrc_file
 from doc_converter import convert_docx_file
 from epub_converter import convert_epub_file
+from pdf_converter import convert_pdf_file
 from custom_dict import parse_custom_entries, build_custom_config_file
 
 # 转换类型显示名 -> OpenCC 配置名
@@ -213,6 +214,17 @@ class ConversionWorker(QThread):
                     except Exception as e:
                         self.log_message.emit(f"处理 {os.path.basename(file_path)} 时出错: {str(e)}")
 
+                elif file_ext == '.pdf':
+                    try:
+                        if convert_pdf_file(
+                            file_path, self.output_folder, self.conversion_type,
+                            lambda msg: self.log_message.emit(msg),
+                            lambda: self._is_cancelled
+                        ):
+                            success_count += 1
+                    except Exception as e:
+                        self.log_message.emit(f"处理 {os.path.basename(file_path)} 时出错: {str(e)}")
+
                 else:
                     self.log_message.emit(f"跳过不支持的文件: {os.path.basename(file_path)}")
 
@@ -311,8 +323,23 @@ class ConversionWorker(QThread):
                     return True
                 else:
                     return False
+            elif file_ext == '.pdf':
+                try:
+                    result = convert_pdf_file(
+                        self.input_path, self.output_folder, self.conversion_type,
+                        lambda msg: self.log_message.emit(msg),
+                        lambda: self._is_cancelled
+                    )
+                except Exception as e:
+                    self.log_message.emit(f"处理 {os.path.basename(self.input_path)} 时出错: {str(e)}")
+                    result = False
+                if result:
+                    self.progress_updated.emit(100, "转换完成!")
+                    return True
+                else:
+                    return False
             else:
-                self.log_message.emit("错误：不支持的文件格式，仅支持docx、txt、md、srt、ass、ssa、lrc、epub文件")
+                self.log_message.emit("错误：不支持的文件格式，仅支持docx、txt、md、srt、ass、ssa、lrc、epub、pdf文件")
                 return False
 
         # 处理文件夹
@@ -325,11 +352,11 @@ class ConversionWorker(QThread):
                     return False
 
                 file_ext = os.path.splitext(f)[1].lower()
-                if file_ext in ['.docx', '.txt', '.md', '.srt', '.ass', '.ssa', '.lrc', '.epub']:
+                if file_ext in ['.docx', '.txt', '.md', '.srt', '.ass', '.ssa', '.lrc', '.epub', '.pdf']:
                     supported_files.append(f)
 
             if not supported_files:
-                self.log_message.emit("在指定文件夹中未找到支持的docx、txt、md、srt、ass、ssa、lrc、epub文件")
+                self.log_message.emit("在指定文件夹中未找到支持的docx、txt、md、srt、ass、ssa、lrc、epub、pdf文件")
                 return False
 
             self.log_message.emit(f"找到 {len(supported_files)} 个文件待处理")
@@ -408,6 +435,17 @@ class ConversionWorker(QThread):
                 elif file_ext == '.epub':
                     try:
                         if convert_epub_file(
+                            file_path, self.output_folder, self.conversion_type,
+                            lambda msg: self.log_message.emit(msg),
+                            lambda: self._is_cancelled
+                        ):
+                            success_count += 1
+                    except Exception as e:
+                        self.log_message.emit(f"处理 {filename} 时出错: {str(e)}")
+
+                elif file_ext == '.pdf':
+                    try:
+                        if convert_pdf_file(
                             file_path, self.output_folder, self.conversion_type,
                             lambda msg: self.log_message.emit(msg),
                             lambda: self._is_cancelled
@@ -1356,6 +1394,7 @@ class ModernUI(QMainWindow):
             <li>拓展OpenCC开源特性，支持陆、台、港三地标准繁体互转</li>
             <li>支持DOCX文档、TXT文本文件、Markdown文件的中文繁、简转换</li>
             <li>支持EPUB电子出版文件的中文简、繁转换</li>
+            <li>有限支持PDF文件的中文简、繁转换（扫描件除外）</li>
             <li>支持字幕文件（SRT、ASS、SSA、LRC）的中文繁、简转换</li>
             <li>支持批量处理文件转换</li>
             <li>转换后默认保留DOCX文档格式、排版不变</li>
@@ -1440,7 +1479,7 @@ class ModernUI(QMainWindow):
         elif choice == QMessageBox.StandardButton.No:  # 文件
             paths, _ = QFileDialog.getOpenFileNames(
                 self, "选择文件", "",
-                "文档文件 (*.docx *.txt *.md *.srt *.ass *.ssa *.lrc *.epub);;所有文件 (*)"
+                "文档文件 (*.docx *.txt *.md *.srt *.ass *.ssa *.lrc *.epub *.pdf);;所有文件 (*)"
             )
             if paths:
                 self.selected_files = paths
