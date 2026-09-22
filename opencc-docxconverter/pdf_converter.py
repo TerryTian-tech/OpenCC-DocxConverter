@@ -140,15 +140,22 @@ _DEFAULT_FONT_NAMES = {
 }
 
 
+# 拉丁字母及其扩展区（含带变音符号的法/德/越文字符），Arial/Times 均可覆盖
+# 注意：捕获组使 re.split 把拉丁片段保留在结果里，而非作为分隔符丢弃
+_LATIN_RUN_RE = re.compile(r'([\x20-\x7e\u00a0-\u024f\u1e00-\u1eff]+)')
+
+
 def _split_by_script(text: str) -> List[Tuple[str, bool]]:
     """
-    将文本切分为 (片段, 是否纯西文) 序列，保持原有顺序。
-    英文/数字/半角符号使用拉丁字体，其余（中文、全角标点等）使用中文字体。
+    将文本切分为 (片段, 是否拉丁文) 序列，保持原有顺序。
+    英文/数字/半角符号及带变音符号的拉丁字符使用拉丁字体，
+    其余（中文、全角标点等）使用中文字体。
     """
     runs = []
-    for part in re.findall(r'[\x20-\x7e]+|[^\x20-\x7e]+', text):
-        if part:
-            runs.append((part, ord(part[0]) < 0x80))
+    for part in _LATIN_RUN_RE.split(text):
+        if not part:
+            continue
+        runs.append((part, _LATIN_RUN_RE.fullmatch(part) is not None))
     return runs
 
 
@@ -181,8 +188,8 @@ def _draw_span_text(page_builder, cc, span, fonts: dict,
     serif = any(hint in orig_name for hint in _SERIF_NAME_HINTS)
 
     runs = []
-    for part, is_ascii in _split_by_script(converted):
-        if is_ascii:
+    for part, is_latin in _split_by_script(converted):
+        if is_latin:
             if serif:
                 key = 'latin_serif_bold' if span.is_bold else 'latin_serif'
             else:
