@@ -8,20 +8,21 @@ from pdf_oxide import DocumentBuilder, EmbeddedFont, PdfDocument
 from PIL import Image, ImageFont
 
 # ---------------------------------------------------------------------------
-# 输出 PDF 使用的内嵌字体查找
+# 输出 PDF 使用的内嵌字体查找（按风格类别组织，尽量保留原文的字体区分度）
 # ---------------------------------------------------------------------------
 
-# 各平台常见 CJK 字体（按优先级排列），用于输出 PDF 的中文渲染
-_CJK_FONT_REGULAR_CANDIDATES = [
+# 黑体 / 无衬线
+_CJK_SANS_CANDIDATES = [
     # Windows
     r"C:\Windows\Fonts\simhei.ttf",
     r"C:\Windows\Fonts\msyh.ttc",
     r"C:\Windows\Fonts\Deng.ttf",
-    r"C:\Windows\Fonts\simsun.ttc",
-    r"C:\Windows\Fonts\simkai.ttf",
     # Linux
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/noto/NotoSansSC-Regular.otf",
     "/usr/share/fonts/wqy-microhei/wqy-microhei.ttc",
     "/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc",
     "/usr/share/fonts/wqy-zenhei/wqy-zenhei.ttc",
@@ -31,16 +32,65 @@ _CJK_FONT_REGULAR_CANDIDATES = [
     "/Library/Fonts/Arial Unicode.ttf",
 ]
 
-_CJK_FONT_BOLD_CANDIDATES = [
+_CJK_SANS_BOLD_CANDIDATES = [
     # Windows
     r"C:\Windows\Fonts\msyhbd.ttc",
     r"C:\Windows\Fonts\Dengb.ttf",
     # Linux
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
     "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc",
 ]
 
-# 拉丁字体（用于英文、数字等纯西文内容，避免中文字体的方块半角拉丁字形）
+# 宋体 / 衬线
+_CJK_SERIF_CANDIDATES = [
+    # Windows
+    r"C:\Windows\Fonts\simsun.ttc",
+    # Linux
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/noto-cjk/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/google-noto-cjk/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/noto/NotoSerifSC-Regular.otf",
+    # macOS
+    "/System/Library/Fonts/Supplemental/Songti.ttc",
+]
+
+_CJK_SERIF_BOLD_CANDIDATES = [
+    # Windows
+    r"C:\Windows\Fonts\simsunb.ttf",
+    # Linux
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSerifCJK-Bold.ttc",
+    "/usr/share/fonts/noto-cjk/NotoSerifCJK-Bold.ttc",
+    "/usr/share/fonts/google-noto-cjk/NotoSerifCJK-Bold.ttc",
+]
+
+# 楷体
+_CJK_KAI_CANDIDATES = [
+    # Windows
+    r"C:\Windows\Fonts\simkai.ttf",
+    r"C:\Windows\Fonts\STKAITI.TTF",
+    # Linux
+    "/usr/share/fonts/opentype/arphic/ukai.ttc",
+    "/usr/share/fonts/truetype/arphic/ukai.ttc",
+    "/usr/share/fonts/arphic/ukai.ttc",
+    # macOS
+    "/System/Library/Fonts/Supplemental/STKaiti.ttf",
+    "/System/Library/Fonts/Supplemental/Kaiti.ttc",
+]
+
+# 仿宋
+_CJK_FANGSONG_CANDIDATES = [
+    # Windows
+    r"C:\Windows\Fonts\simfang.ttf",
+    r"C:\Windows\Fonts\STFANGSO.TTF",
+    # macOS
+    "/System/Library/Fonts/Supplemental/STFangsong.ttf",
+]
+
+# 拉丁字体（用于英文、数字等西文内容，避免中文字体的方块半角拉丁字形）
 _LATIN_SANS_CANDIDATES = [
     r"C:\Windows\Fonts\arial.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -74,11 +124,31 @@ _LATIN_SERIF_BOLD_CANDIDATES = [
     "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf",
 ]
 
-# 原文 span 字体名包含这些关键词时，西文部分使用衬线拉丁字体
-_SERIF_NAME_HINTS = ('times', 'roman', 'serif', 'georgia', 'garamond', 'book',
-                     'song', 'sun', 'ming', 'kai')
+# 原文字体名 -> 风格类别的关键词（按序匹配，先匹配到者生效；
+# 楷体/仿宋的关键词更特殊，需在宋体/黑体之前判断）
+_FONT_CATEGORY_KEYWORDS = [
+    ('kai', ('kai', '楷')),
+    ('fangsong', ('fangsong', 'fang', '仿宋')),
+    ('serif', ('song', 'sun', 'ming', 'mincho', 'serif', 'times', 'roman',
+               'georgia', 'garamond', 'book', '宋')),
+    ('sans', ('hei', 'yahei', 'deng', 'pingfang', 'hiragino', 'gothic',
+              'sans', 'noto', 'sourcehan', 'wqy', 'zenhei', 'microhei', '黑', '雅黑', '等线')),
+]
 
-_ASCII_RUN_RE = re.compile(r'([\x20-\x7e]+)')
+
+def _classify_font_category(font_name: Optional[str]) -> str:
+    """
+    根据原文 span 的字体名判断其风格类别（sans/serif/kai/fangsong）。
+    PDF 内嵌字体名常带子集前缀（如 ABCDEF+SimSun），需先剥离。
+    无法识别时返回 'sans'（与整体回退字体一致）。
+    """
+    name = (font_name or '').lower()
+    if '+' in name:
+        name = name.split('+', 1)[1]
+    for category, keywords in _FONT_CATEGORY_KEYWORDS:
+        if any(keyword in name for keyword in keywords):
+            return category
+    return 'sans'
 
 
 def _find_first_loadable_font(candidates: List[str], log: Callable[[str], None]) -> Optional[str]:
@@ -92,6 +162,173 @@ def _find_first_loadable_font(candidates: List[str], log: Callable[[str], None])
         except Exception:
             log(f"警告：字体文件无法加载，已跳过 - {path}")
     return None
+
+
+# ---------------------------------------------------------------------------
+# 字体目录扫描（固定候选路径未命中时的冗余发现，覆盖各 Linux 发行版差异）
+# ---------------------------------------------------------------------------
+
+# 非常规字重/变形的文件名特征（匹配常规体时排除，避免把 Bold/Light 当常规体）
+_DECORATION_EXCLUDES = ("bold", "black", "heavy", "medium", "light", "thin",
+                        "italic", "oblique", "condensed", "narrow", "mono",
+                        "semibold", "extrabold", "variable", "-vf", "-var")
+
+# 匹配粗体时的排除特征（不能排除 "bold" 本身，只排除更重/更轻及变形字重）
+_DECORATION_EXCLUDES_BOLD = ("black", "heavy", "semibold", "extrabold", "medium",
+                             "light", "thin", "italic", "oblique", "condensed",
+                             "narrow", "mono", "variable", "-vf", "-var")
+
+# 匹配西文字体时排除其他文字体系的字体文件（如 Noto Sans CJK / Noto Sans Arabic）
+_NONLATIN_EXCLUDES = ("cjk", "arabic", "hebrew", "thai", "devanagari", "hangul",
+                      "sc-", "tc-", "jp-", "kr-", "hk-", "simsunb")
+
+# 各逻辑字体的扫描文件名模式（小写 fnmatch，按优先级排列）
+_FONT_SCAN_PATTERNS = {
+    'sans': [
+        "notosanscjk-sc-regular*", "notosanssc-regular*", "notosanssc-*",
+        "notosanscjk-regular*", "sourcehansans-sc-regular*", "sourcehansanssc*regular*",
+        "sourcehansans-regular*", "*wqy*microhei*", "*wqy*zenhei*", "droidsansfallback*",
+        "*simhei*",
+    ],
+    'sans_bold': [
+        "notosanscjk-sc-bold*", "notosanssc-bold*", "notosanscjk-bold*",
+        "sourcehansans*bold*", "*wqy*microhei*",
+    ],
+    'serif': [
+        "notoserifcjk-sc-regular*", "notoserifsc-regular*", "notoserifsc-*",
+        "notoserifcjk-regular*", "sourcehanserif-sc-regular*", "sourcehanserif*regular*",
+        "sourcehanserif-regular*", "uming*", "*simsun.ttc", "*simsun.ttf",
+    ],
+    'serif_bold': [
+        "notoserifcjk-sc-bold*", "notoserifsc-bold*", "notoserifcjk-bold*",
+        "sourcehanserif*bold*",
+    ],
+    'kai': [
+        "ukai*", "*kaiti*", "stkaiti*", "dfkai*", "*simkai*",
+    ],
+    'fangsong': [
+        "*fangsong*", "stfangsong*", "simpfang*", "*simfang*",
+    ],
+    'latin_sans': [
+        "liberationsans-regular*", "liberationsans-*", "dejavusans.ttf", "dejavusans-*",
+        "carlito-regular*", "carlito-*", "notosans-regular*", "notosans-*",
+        "freesans-*", "arial*.ttf",
+    ],
+    'latin_sans_bold': [
+        "liberationsans-bold*", "dejavusans-bold*", "carlito-bold*",
+        "notosans-bold*", "arialbd*",
+    ],
+    'latin_serif': [
+        "liberationserif-regular*", "liberationserif-*", "dejavuserif.ttf", "dejavuserif-*",
+        "tinos-regular*", "notoserif-regular*", "notoserif-*", "freeserif-*",
+        "times*.ttf",
+    ],
+    'latin_serif_bold': [
+        "liberationserif-bold*", "dejavuserif-bold*", "tinos-bold*",
+        "notoserif-bold*", "timesbd*",
+    ],
+}
+
+_font_scan_cache: Optional[List[str]] = None
+
+
+def _font_scan_roots() -> List[str]:
+    """
+    汇总各平台的标准字体目录（去重、仅保留存在的目录）：
+    Linux 发行版包路径差异大，连同 XDG 用户目录一起列入；macOS 与
+    Windows 的系统/用户字体目录也包含，作为固定候选之外的兜底。
+    """
+    roots = [
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        "/opt/homebrew/share/fonts",
+        "/System/Library/Fonts",
+        "/Library/Fonts",
+    ]
+    xdg_data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    roots.append(os.path.join(xdg_data_home, "fonts"))
+    roots.append(os.path.expanduser("~/.fonts"))
+    roots.append(os.path.expanduser("~/Library/Fonts"))
+    for d in os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(os.pathsep):
+        if d:
+            roots.append(os.path.join(d, "fonts"))
+
+    win_root = os.environ.get("WINDIR") or r"C:\Windows"
+    roots.append(os.path.join(win_root, "Fonts"))
+    local_appdata = os.environ.get("LOCALAPPDATA")
+    if local_appdata:
+        roots.append(os.path.join(local_appdata, "Microsoft", "Windows", "Fonts"))
+
+    unique: List[str] = []
+    seen = set()
+    for root in roots:
+        root = os.path.normpath(root)
+        if root in seen:
+            continue
+        seen.add(root)
+        if os.path.isdir(root):
+            unique.append(root)
+    return unique
+
+
+def _iter_font_files() -> List[str]:
+    """遍历字体目录中的 ttf/ttc/otf 文件（按路径排序，进程内缓存）"""
+    global _font_scan_cache
+    if _font_scan_cache is None:
+        files: List[str] = []
+        for root in _font_scan_roots():
+            try:
+                for dirpath, _dirnames, filenames in os.walk(root):
+                    for filename in filenames:
+                        if filename.lower().endswith((".ttf", ".ttc", ".otf")):
+                            files.append(os.path.join(dirpath, filename))
+            except OSError:
+                continue  # 个别目录不可读时跳过
+        files.sort()
+        _font_scan_cache = files
+    return _font_scan_cache
+
+
+def _find_font_by_scan(key: str, log: Callable[[str], None]) -> Optional[str]:
+    """
+    按文件名模式在字体目录中查找可加载的字体。
+    模式按优先级依次尝试；常规体模式会排除 Bold/Light 等变体，
+    西文字体额外排除其他文字体系的字体文件。
+    """
+    import fnmatch
+
+    patterns = _FONT_SCAN_PATTERNS[key]
+    latin = key.startswith('latin')
+    decorations = (_DECORATION_EXCLUDES_BOLD if key.endswith('_bold')
+                   else _DECORATION_EXCLUDES)
+    excludes = decorations + (_NONLATIN_EXCLUDES if latin else ())
+    files = _iter_font_files()
+
+    for pattern in patterns:
+        for path in files:
+            name = os.path.basename(path).lower()
+            if any(token in name for token in excludes):
+                continue
+            if not fnmatch.fnmatch(name, pattern):
+                continue
+            try:
+                EmbeddedFont.from_file(path)
+                return path
+            except Exception:
+                continue
+    return None
+
+
+def _find_font(exact_candidates: List[str], scan_key: str,
+               log: Callable[[str], None]) -> Optional[str]:
+    """
+    字体发现入口：先试固定候选路径（快、可预测），
+    未命中再按文件名模式扫描标准字体目录（覆盖发行版差异）。
+    """
+    path = _find_first_loadable_font(exact_candidates, log)
+    if path:
+        return path
+    return _find_font_by_scan(scan_key, log)
 
 
 # ---------------------------------------------------------------------------
@@ -131,8 +368,12 @@ def _measure(text: str, font_path: str, size: float) -> Optional[float]:
 
 # 输出文档中各逻辑字体的默认注册名（convert_pdf_file 中按可用字体实例化）
 _DEFAULT_FONT_NAMES = {
-    'cjk': "CJK-Reg",
-    'cjk_bold': "CJK-Bold",
+    'sans': "CJK-Hei",
+    'sans_bold': "CJK-Hei-Bold",
+    'serif': "CJK-Song",
+    'serif_bold': "CJK-Song-Bold",
+    'kai': "CJK-Kai",
+    'fangsong': "CJK-FangSong",
     'latin_sans': "Latin-Sans",
     'latin_sans_bold': "Latin-Sans-Bold",
     'latin_serif': "Latin-Serif",
@@ -159,44 +400,138 @@ def _split_by_script(text: str) -> List[Tuple[str, bool]]:
     return runs
 
 
-def _draw_span_text(page_builder, cc, span, fonts: dict,
-                    ox: float, oy: float) -> bool:
-    """
-    转换单个文本片段并按脚本分组绘制。
+# ---------------------------------------------------------------------------
+# 字符级文本聚合（避免提取器在字距较大时插入的“推断空格”破坏单词）
+# ---------------------------------------------------------------------------
 
-    - 纯西文片段按原文字体特征选择衬线/非衬线拉丁字体
+def _char_is_bold(ch) -> bool:
+    """根据字符的字体粗细描述判断是否加粗"""
+    weight = str(getattr(ch, 'font_weight', '') or '').lower()
+    return ('bold' in weight) or ('heavy' in weight) or ('black' in weight)
+
+
+def _char_runs_from_page(doc: PdfDocument, page_index: int,
+                         log: Callable[[str], None]) -> Optional[List[dict]]:
+    """
+    用字符级数据（extract_chars）聚合出绘制单元，替代 extract_spans 的文本。
+
+    extract_spans 生成的文本会在字符间隙较大时插入“推断空格”（原文中并不
+    存在空格字符），直接重绘会把单词拆开（如 Work -> W ork）。改为从字符的
+    精确坐标出发：同风格且间隙小于阈值的字符合并为一个单元，间隙大的各自
+    按原坐标定位——既不引入多余空格，也保留原文版式（含两端对齐的拉伸）。
+
+    返回 None 表示字符提取失败（调用方回退到 span 模式），否则返回单元列表：
+    {text, x, y, w, font_name, size, color, bold}，坐标为 PDF 用户空间。
+    """
+    try:
+        chars = doc.extract_chars(page_index)
+    except Exception as e:
+        log(f"  ⚠ 第{page_index + 1}页字符提取失败: {e}，改用片段模式重排")
+        return None
+    if not chars:
+        return []
+
+    # 自上而下、自左而右扫描
+    chars = sorted(chars, key=lambda c: (-round(c.origin_y, 1), c.origin_x))
+
+    runs: List[dict] = []
+    rotated_skipped = 0
+    cur = None
+    tail = None  # 当前单元的最后一个字符
+
+    for ch in chars:
+        char = ch.char
+        if not char:
+            continue
+        if getattr(ch, 'rotation_degrees', 0.0):
+            rotated_skipped += 1
+            continue
+
+        size = ch.font_size if ch.font_size and ch.font_size > 0 else 10.0
+        bold = _char_is_bold(ch)
+        style = (ch.font_name, round(size, 1), tuple(ch.color or (0.0, 0.0, 0.0)), bold)
+
+        merged = False
+        if cur is not None:
+            same_line = abs(ch.origin_y - tail.origin_y) <= max(size * 0.35, 1.5)
+            gap = ch.origin_x - (tail.origin_x + (tail.advance_width or 0.0))
+            # 西文相邻用较紧的阈值（真实空格约 0.25em），中西文及中文之间放宽，
+            # 尽量让词语留在同一单元以保证词汇级转换的上下文
+            latin_pair = (_LATIN_RUN_RE.fullmatch(tail.char or '') is not None
+                          and _LATIN_RUN_RE.fullmatch(char) is not None)
+            threshold = size * (0.20 if latin_pair else 0.30)
+            if same_line and gap <= threshold and cur['style'] == style:
+                cur['text'] += char
+                cur['w'] = (ch.origin_x + (ch.advance_width or 0.0)) - cur['x']
+                tail = ch
+                merged = True
+
+        if not merged:
+            cur = {
+                'text': char,
+                'x': ch.origin_x,
+                'y': ch.origin_y,
+                'w': ch.advance_width or 0.0,
+                'font_name': ch.font_name,
+                'size': size,
+                'color': ch.color,
+                'bold': bold,
+                'style': style,
+            }
+            runs.append(cur)
+            tail = ch
+
+    if rotated_skipped:
+        log(f"  ⚠ 第{page_index + 1}页有 {rotated_skipped} 个旋转字符无法按水平文本重排，已跳过")
+
+    for r in runs:
+        r.pop('style', None)
+    return runs
+
+
+# ---------------------------------------------------------------------------
+# 文本绘制（中英分字体 + 按脚本切分 + 宽度自适应）
+# ---------------------------------------------------------------------------
+
+def _draw_text(page_builder, cc, text: str, x: float, y: float, run_w: float,
+               font_name: Optional[str], size: float, color, is_bold: bool,
+               fonts: dict) -> bool:
+    """
+    转换一段文本并按脚本分组绘制到指定位置。
+
+    - 按原文风格类别（黑体/宋体/楷体/仿宋）匹配输出字体，保留字体区分度
+    - 西文片段按原文风格选择衬线/非衬线拉丁字体
     - 各片段用 PIL 精确测量宽度，顺序推进绘制位置
     - 总宽超出原文片段宽度时按比例缩小字号，避免与后续文字重叠
 
     fonts 为 逻辑字体键 -> {'name': 注册名, 'path': 字体文件路径}。
     返回是否实际绘制了内容。
     """
-    text = span.text
-    if not text or not text.strip():
-        return False
     converted = cc.convert(text)
     if not converted:
         return False
 
-    x, y = _offset_point(span.bbox[0], span.bbox[1], ox, oy)
-    span_w = span.bbox[2]
-    size = span.font_size if span.font_size and span.font_size > 0 else 10.0
-    color = span.color or (0.0, 0.0, 0.0)
+    span_w = run_w
+    size = size if size and size > 0 else 10.0
+    color = color or (0.0, 0.0, 0.0)
 
-    # 根据原文字体名判断西文用衬线还是非衬线拉丁字体
-    orig_name = (span.font_name or '').lower()
-    serif = any(hint in orig_name for hint in _SERIF_NAME_HINTS)
+    category = _classify_font_category(font_name)
 
     runs = []
     for part, is_latin in _split_by_script(converted):
         if is_latin:
-            if serif:
-                key = 'latin_serif_bold' if span.is_bold else 'latin_serif'
+            # 楷体/仿宋的西文部分按衬线处理（与宋体一致）
+            if category in ('serif', 'kai', 'fangsong'):
+                key = 'latin_serif_bold' if is_bold else 'latin_serif'
             else:
-                key = 'latin_sans_bold' if span.is_bold else 'latin_sans'
+                key = 'latin_sans_bold' if is_bold else 'latin_sans'
         else:
-            key = 'cjk_bold' if span.is_bold else 'cjk'
-        entry = fonts.get(key) or fonts['cjk']
+            # 粗体仅在有同族粗体文件时生效，避免为保字重损失字体风格
+            if is_bold and category in ('sans', 'serif'):
+                key = category + '_bold'
+            else:
+                key = category
+        entry = fonts.get(key) or fonts['sans']
         runs.append([part, entry['name'], entry['path']])
 
     # 宽度自适应：测量失败则不做缩放
@@ -208,12 +543,24 @@ def _draw_span_text(page_builder, cc, span, fonts: dict,
             size *= scale
             widths = [_measure(r[0], r[2], size) for r in runs]
 
-    for (part, font_name, _path), width in zip(runs, widths):
-        page_builder.font(font_name, size).at(x, y).inline_color(
+    for (part, font_key, _path), width in zip(runs, widths):
+        page_builder.font(font_key, size).at(x, y).inline_color(
             color[0], color[1], color[2], part)
         if width:
             x += width
     return True
+
+
+def _draw_span_text(page_builder, cc, span, fonts: dict,
+                    ox: float, oy: float) -> bool:
+    """按 span 绘制（字符级聚合失败时的回退路径）"""
+    text = span.text
+    if not text or not text.strip():
+        return False
+    size = span.font_size if span.font_size and span.font_size > 0 else 10.0
+    return _draw_text(page_builder, cc, text,
+                      span.bbox[0] - ox, span.bbox[1] - oy, span.bbox[2],
+                      span.font_name, size, span.color, span.is_bold, fonts)
 
 
 # ---------------------------------------------------------------------------
@@ -369,28 +716,42 @@ def convert_pdf_file(
         log(f"错误：OpenCC 初始化失败 ({conversion_type}) - {e}")
         return False
 
-    # --- 查找输出用字体 ---
-    font_regular = _find_first_loadable_font(_CJK_FONT_REGULAR_CANDIDATES, log)
-    if not font_regular:
-        log("错误：系统中未找到可用的中文字体（SimHei/微软雅黑/Noto CJK 等），无法生成中文 PDF")
+    # --- 查找输出用字体（固定候选路径 -> 目录扫描，按风格类别，带回退链） ---
+    sans = _find_font(_CJK_SANS_CANDIDATES, 'sans', log)
+    if not sans:
+        log("错误：系统中未找到可用的中文字体（SimHei/微软雅黑/Noto CJK/文泉驿等），无法生成中文 PDF")
         return False
-    font_bold = _find_first_loadable_font(_CJK_FONT_BOLD_CANDIDATES, log)
-    latin_sans = _find_first_loadable_font(_LATIN_SANS_CANDIDATES, log)
-    latin_sans_bold = _find_first_loadable_font(_LATIN_SANS_BOLD_CANDIDATES, log)
-    latin_serif = _find_first_loadable_font(_LATIN_SERIF_CANDIDATES, log)
-    latin_serif_bold = _find_first_loadable_font(_LATIN_SERIF_BOLD_CANDIDATES, log)
+    serif = _find_font(_CJK_SERIF_CANDIDATES, 'serif', log)
+    kai = _find_font(_CJK_KAI_CANDIDATES, 'kai', log)
+    fangsong = _find_font(_CJK_FANGSONG_CANDIDATES, 'fangsong', log)
+    sans_bold = _find_font(_CJK_SANS_BOLD_CANDIDATES, 'sans_bold', log)
+    serif_bold = _find_font(_CJK_SERIF_BOLD_CANDIDATES, 'serif_bold', log)
+    latin_sans = _find_font(_LATIN_SANS_CANDIDATES, 'latin_sans', log)
+    latin_sans_bold = _find_font(_LATIN_SANS_BOLD_CANDIDATES, 'latin_sans_bold', log)
+    latin_serif = _find_font(_LATIN_SERIF_CANDIDATES, 'latin_serif', log)
+    latin_serif_bold = _find_font(_LATIN_SERIF_BOLD_CANDIDATES, 'latin_serif_bold', log)
 
+    # 类别缺失时回退：楷体/仿宋 -> 宋体 -> 黑体；粗体缺失用同族常规体
+    serif = serif or sans
     font_paths = {
-        'cjk': font_regular,
-        'cjk_bold': font_bold or font_regular,
-        'latin_sans': latin_sans or font_regular,
-        'latin_sans_bold': latin_sans_bold or latin_sans or font_regular,
-        'latin_serif': latin_serif or latin_sans or font_regular,
+        'sans': sans,
+        'sans_bold': sans_bold or sans,
+        'serif': serif,
+        'serif_bold': serif_bold or serif,
+        'kai': kai or serif,
+        'fangsong': fangsong or serif,
+        'latin_sans': latin_sans or sans,
+        'latin_sans_bold': latin_sans_bold or latin_sans or sans,
+        'latin_serif': latin_serif or latin_sans or serif,
         'latin_serif_bold': latin_serif_bold or latin_serif or latin_sans_bold
-                            or latin_sans or font_regular,
+                            or latin_sans or serif,
     }
-    log(f"输出中文字体: {os.path.basename(font_regular)}"
-        + (f"（粗体: {os.path.basename(font_bold)}）" if font_bold else "（未找到粗体字体，粗体文字将以常规字体渲染）"))
+
+    # 日志：展示各类别实际使用的字体，方便用户核对字体区分度
+    _CATEGORY_LABELS = [('sans', '黑体'), ('serif', '宋体'), ('kai', '楷体'), ('fangsong', '仿宋')]
+    parts = [f"{label}={os.path.basename(font_paths[key])}" for key, label in _CATEGORY_LABELS]
+    log("输出中文字体（按原文风格匹配）: " + "，".join(parts)
+        + "；未找到同类字体时按 楷体/仿宋→宋体→黑体 回退")
     if latin_sans:
         latin_desc = os.path.basename(latin_serif) if latin_serif else os.path.basename(latin_sans)
         log(f"输出西文字体: {latin_desc}")
@@ -437,8 +798,8 @@ def convert_pdf_file(
                     builder = builder.register_embedded_font(default_name, EmbeddedFont.from_file(path))
                     registered_by_path[path] = default_name
                 except Exception as e:
-                    log(f"警告：字体 {os.path.basename(path)} 注册失败（{e}），相关文字将使用中文字体渲染")
-                    fonts[key] = {'name': _DEFAULT_FONT_NAMES['cjk'], 'path': font_paths['cjk']}
+                    log(f"警告：字体 {os.path.basename(path)} 注册失败（{e}），相关文字将使用黑体渲染")
+                    fonts[key] = {'name': _DEFAULT_FONT_NAMES['sans'], 'path': font_paths['sans']}
                     continue
             fonts[key] = {'name': registered_by_path[path], 'path': path}
 
@@ -493,16 +854,26 @@ def convert_pdf_file(
             except Exception as e:
                 log(f"  ⚠ 第{page_index + 1}页矢量图形保留失败: {e}")
 
-            # --- 文本：逐 span 转换并按原位置重排 ---
-            try:
-                spans = doc.extract_spans(page_index)
-            except Exception as e:
-                log(f"  ⚠ 第{page_index + 1}页文本提取失败: {e}")
-                spans = []
+            # --- 文本：字符级聚合成绘制单元后转换重排（避免推断空格拆开单词） ---
+            char_runs = _char_runs_from_page(doc, page_index, log)
+            if char_runs is not None:
+                for run in char_runs:
+                    if _draw_text(page_builder, cc, run['text'],
+                                  run['x'] - cx0, run['y'] - cy0, run['w'],
+                                  run['font_name'], run['size'], run['color'],
+                                  run['bold'], fonts):
+                        converted_spans += 1
+            else:
+                # 回退：按 span 重排
+                try:
+                    spans = doc.extract_spans(page_index)
+                except Exception as e:
+                    log(f"  ⚠ 第{page_index + 1}页文本提取失败: {e}")
+                    spans = []
 
-            for span in spans:
-                if _draw_span_text(page_builder, cc, span, fonts, cx0, cy0):
-                    converted_spans += 1
+                for span in spans:
+                    if _draw_span_text(page_builder, cc, span, fonts, cx0, cy0):
+                        converted_spans += 1
 
             builder = page_builder.done()
 
