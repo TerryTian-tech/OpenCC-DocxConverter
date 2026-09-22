@@ -1,9 +1,11 @@
+import io
 import os
 import re
 from typing import Callable, List, Optional, Tuple, Union
 
 from opencc import OpenCC
 from pdf_oxide import DocumentBuilder, EmbeddedFont, PdfDocument
+from PIL import Image, ImageFont
 
 # ---------------------------------------------------------------------------
 # 输出 PDF 使用的内嵌字体查找
@@ -102,14 +104,10 @@ _font_measure_cache = {}
 def _measure(text: str, font_path: str, size: float) -> Optional[float]:
     """
     用 PIL 测量文本以指定字体渲染时的 advance 宽度（PDF pt，1px@72dpi = 1pt）。
-    测量失败（无 PIL 或字体不支持）返回 None，调用方回退到不缩放。
+    测量失败（字体不支持）返回 None，调用方回退到不缩放。
     """
     if not text:
         return 0.0
-    try:
-        from PIL import ImageFont
-    except ImportError:
-        return None
     key = (font_path, round(size, 2))
     font = _font_measure_cache.get(key)
     if font is None:
@@ -280,18 +278,13 @@ def _draw_images(page_builder, doc: PdfDocument, page_index: int,
 def _rasterize_page_png(doc: PdfDocument, page_index: int, dpi: int = 150) -> Optional[bytes]:
     """
     将整页栅格化为 PNG 字节（用于没有文本层的扫描页，保留原页面外观）。
-    需要 Pillow；不可用时返回 None。
+    栅格化失败返回 None，调用方按空白页处理。
     """
-    try:
-        from PIL import Image
-    except ImportError:
-        return None
     try:
         pm = doc.render_pixmap(page_index, dpi=dpi)
         im = Image.frombytes("RGBA", (pm.width, pm.height), pm.data)
         bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
         bg.alpha_composite(im)
-        import io
         buf = io.BytesIO()
         bg.convert("RGB").save(buf, format="PNG")
         return buf.getvalue()
@@ -476,7 +469,7 @@ def convert_pdf_file(
                 if png:
                     page_builder.image_with_alt(png, 0.0, 0.0, page_w, page_h, "")
                 else:
-                    log(f"  ⚠ 第{page_index + 1}页无法栅格化（缺少 Pillow 组件），输出为空白页")
+                    log(f"  ⚠ 第{page_index + 1}页栅格化失败，输出为空白页")
                 builder = page_builder.done()
                 continue
 
