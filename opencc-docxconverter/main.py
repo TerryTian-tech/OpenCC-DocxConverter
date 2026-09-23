@@ -5,14 +5,18 @@ import tempfile
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTextEdit, QPlainTextEdit, QFileDialog, QLabel,
                              QProgressBar, QMessageBox, QGroupBox, QComboBox, QCheckBox,
-                             QLineEdit, QStyleFactory, QStackedWidget, QFrame, QScrollArea)
+                             QLineEdit, QStyleFactory, QStackedWidget, QFrame, QScrollArea,
+                             QMenu)
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
-from PySide6.QtGui import QIcon, QColor, QPalette
+from PySide6.QtGui import (QIcon, QColor, QPalette, QTextCursor,
+                           QKeySequence, QShortcut, QAction, QFont,
+                           QPainter, QPainterPath, QPen, QFontMetricsF)
 
 from opencc import OpenCC
 
 from constants import VERSION
 from updater import UpdateChecker
+from ambiguity_text import convert_with_ambiguities, query_candidates, AmbiguityConversionError
 from text_converter import convert_txt_file, convert_srt_file, convert_ass_file, convert_lrc_file
 from doc_converter import convert_docx_file
 from epub_converter import convert_epub_file
@@ -39,7 +43,10 @@ CONVERSION_TYPES = {
     "简体到香港繁体（香港常用词汇）": "s2hkp",
     "香港繁体到简体（大陆常用词汇）": "hk2sp",
     "繁体（OpenCC标准，旧字体）到日文新字体": "t2jp",
-    "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t"
+    "日文新字体到繁体（OpenCC标准，旧字体）": "jp2t",
+    "繁体汉字到小篆（Unicode 18.0 篆书区块）": "t2seal",
+    "简体到小篆（Unicode 18.0 篆书区块）": "s2seal",
+    "小篆（Unicode 18.0 篆书区块）到繁体汉字": "seal2t"
 }
 
 class ConversionWorker(QThread):
@@ -464,6 +471,179 @@ class ConversionWorker(QThread):
             return False
 
 
+class TextConversionWorker(QThread):
+    """
+    文字转换工作线程（带一对多歧义标注），避免转换时阻塞UI
+    """
+    conversion_done = Signal(dict)  # 完成信号（转换结果：output/defs/spans/stats）
+    conversion_failed = Signal(str)  # 失败信号（错误信息）
+
+    def __init__(self, text, config, custom_config_path=None):
+        super().__init__()
+        self.text = text
+        self.config = config
+        self.custom_config_path = custom_config_path
+        self._proc = None
+        self._cancelled = False
+
+    def cancel(self):
+        """取消转换（终止 OpenCC 子进程）"""
+        self._cancelled = True
+        if self._proc is not None:
+            try:
+                self._proc.terminate()
+            except OSError:
+                pass
+
+    def run(self):
+        try:
+            result = convert_with_ambiguities(
+                self.text, self.config,
+                on_spawn=lambda proc: setattr(self, "_proc", proc)
+            )
+            self.conversion_done.emit(result)
+        except AmbiguityConversionError as e:
+            self.conversion_failed.emit("转换已取消" if self._cancelled else str(e))
+        except Exception as e:
+            self.conversion_failed.emit(f"转换失败：{e}")
+        finally:
+            if self.custom_config_path and os.path.exists(self.custom_config_path):
+                try:
+                    os.remove(self.custom_config_path)
+                except OSError:
+                    pass
+
+
+class AmbiguityOutputEdit(QTextEdit):
+    """
+    转换结果输出框：一对多歧义跨度自绘红色波浪线（比内置下划线更粗），
+    点击波浪线弹出候选字菜单
+    """
+    ambiguity_clicked = Signal(int, object)  # (歧义跨度序号, 弹出菜单的全局坐标 QPoint)
+
+    WAVE_COLOR = QColor("#e11d48")
+    WAVE_PEN_WIDTH = 2.0  # 波浪线粗细（内置下划线无法调粗，故自绘）
+    WAVE_AMPLITUDE = 2.0  # 波幅（像素）
+    WAVE_HALF_WAVE = 4.0  # 半个波浪的长度（像素）
+
+    def __init__(self):
+        super().__init__()
+        self.setReadOnly(True)
+        self._spans = []  # [{"start", "length", "def_idx", "resolved"}]
+        self._mark_ambiguities = False
+
+    def display_result(self, text, spans, mark_ambiguities):
+        """显示转换结果；mark_ambiguities 为真时给歧义跨度加红色波浪线"""
+        self._spans = [dict(span, resolved=False) for span in spans]
+        self._mark_ambiguities = mark_ambiguities
+        self.setPlainText(text)
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.Start)
+        self.setTextCursor(cursor)
+
+    def spans(self):
+        return self._spans
+
+    def span_text(self, span_idx):
+        span = self._spans[span_idx]
+        return self.toPlainText()[span["start"]:span["start"] + span["length"]]
+
+    def _span_at(self, pos):
+        """返回坐标 pos 处的歧义跨度序号；不在任何跨度内返回 None"""
+        position = self.cursorForPosition(pos).position()
+        for i, span in enumerate(self._spans):
+            if span["start"] <= position < span["start"] + span["length"]:
+                return i
+        # 点击落在跨度最后一个字符的右边界时 position 恰为 end，回退一位再试
+        if position > 0:
+            position -= 1
+            for i, span in enumerate(self._spans):
+                if span["start"] <= position < span["start"] + span["length"]:
+                    return i
+        return None
+
+    def mouseReleaseEvent(self, event):
+        if (event.button() == Qt.LeftButton
+                and event.modifiers() == Qt.NoModifier
+                and not self.textCursor().hasSelection()):
+            span_idx = self._span_at(event.position().toPoint())
+            if span_idx is not None and not self._spans[span_idx]["resolved"]:
+                self.ambiguity_clicked.emit(
+                    span_idx, event.globalPosition().toPoint())
+                return
+        super().mouseReleaseEvent(event)
+
+    def apply_candidate(self, span_idx, candidate):
+        """用选中的候选值替换对应歧义跨度的文本，并调整后续跨度偏移"""
+        span = self._spans[span_idx]
+        cursor = QTextCursor(self.document())
+        cursor.setPosition(span["start"])
+        cursor.setPosition(span["start"] + span["length"], QTextCursor.KeepAnchor)
+        cursor.removeSelectedText()
+        cursor.insertText(candidate)
+        delta = len(candidate) - span["length"]
+        span["length"] = len(candidate)
+        span["resolved"] = True
+        for other in self._spans[span_idx + 1:]:
+            other["start"] += delta
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not (self._mark_ambiguities and self._spans):
+            return
+        painter = QPainter(self.viewport())
+        painter.setRenderHint(QPainter.Antialiasing)
+        pen = QPen(self.WAVE_COLOR, self.WAVE_PEN_WIDTH)
+        pen.setCapStyle(Qt.RoundCap)
+        pen.setJoinStyle(Qt.RoundJoin)
+        painter.setPen(pen)
+        metrics = QFontMetricsF(self.font())
+        text = self.toPlainText()
+        for span in self._spans:
+            if span["resolved"]:
+                continue
+            self._draw_span_wave(painter, span, text, metrics)
+        painter.end()
+
+    def _draw_span_wave(self, painter, span, text, metrics):
+        """在跨度下方绘制波浪线；逐字符取位置，跨行（自动换行）时分行绘制"""
+        viewport = self.viewport()
+        visible_top, visible_bottom = -40, viewport.height() + 40
+        run_x1 = run_x2 = run_y = None
+        for pos in range(span["start"], span["start"] + span["length"]):
+            cursor = QTextCursor(self.document())
+            cursor.setPosition(pos)
+            rect = self.cursorRect(cursor)
+            if run_y is not None and (rect.bottom() < visible_top or rect.top() > visible_bottom):
+                break
+            char_width = metrics.horizontalAdvance(text[pos]) if pos < len(text) else rect.height()
+            if run_y is not None and abs(rect.bottom() - run_y) <= 1:
+                # 同一行，延伸当前波浪段
+                run_x2 = rect.x() + char_width
+            else:
+                # 新的一行（或首个字符）：先画完上一段
+                if run_y is not None:
+                    self._paint_wave_segment(painter, run_x1, run_x2, run_y)
+                run_x1, run_x2 = rect.x(), rect.x() + char_width
+                run_y = rect.bottom() - 2
+        if run_y is not None:
+            self._paint_wave_segment(painter, run_x1, run_x2, run_y)
+
+    def _paint_wave_segment(self, painter, x1, x2, y):
+        """绘制 [x1, x2] 区间、基线为 y 的一段波浪线"""
+        if x2 <= x1:
+            return
+        path = QPainterPath()
+        path.moveTo(x1, y)
+        x, up = x1, True
+        while x < x2:
+            next_x = min(x + self.WAVE_HALF_WAVE, x2)
+            ctrl_y = y - self.WAVE_AMPLITUDE if up else y + self.WAVE_AMPLITUDE
+            path.quadTo((x + next_x) / 2, ctrl_y, next_x, y)
+            x, up = next_x, not up
+        painter.drawPath(path)
+
+
 class ModernUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -517,7 +697,7 @@ class ModernUI(QMainWindow):
 
         # 导航按钮
         self.nav_buttons = []
-        nav_items = ["文件转换", "设置", "关于"]
+        nav_items = ["文件转换", "文字转换", "设置", "关于"]
         for index, name in enumerate(nav_items):
             btn = QPushButton(name)
             btn.setObjectName("navButton")
@@ -533,6 +713,7 @@ class ModernUI(QMainWindow):
         # 右侧内容区域
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self.create_conversion_tab())
+        self.content_stack.addWidget(self.create_text_tab())
         self.content_stack.addWidget(self.create_settings_tab())
         self.content_stack.addWidget(self.create_about_tab())
         main_layout.addWidget(self.content_stack)
@@ -545,7 +726,7 @@ class ModernUI(QMainWindow):
         self.content_stack.setCurrentIndex(index)
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == index)
-        page_names = ["文件转换", "设置", "关于"]
+        page_names = ["文件转换", "文字转换", "设置", "关于"]
         self.statusBar().showMessage(f"当前页面: {page_names[index]}")
 
     def get_logo_path(self):
@@ -1315,6 +1496,9 @@ class ModernUI(QMainWindow):
         self.type_combo.addItem("香港繁体到简体（大陆常用词汇）")
         self.type_combo.addItem("繁体（OpenCC标准，旧字体）到日文新字体")
         self.type_combo.addItem("日文新字体到繁体（OpenCC标准，旧字体）")
+        self.type_combo.addItem("繁体汉字到小篆（Unicode 18.0 篆书区块）")
+        self.type_combo.addItem("简体到小篆（Unicode 18.0 篆书区块）")
+        self.type_combo.addItem("小篆（Unicode 18.0 篆书区块）到繁体汉字")
         type_layout.addWidget(self.type_combo)
         options_layout.addLayout(type_layout)
 
@@ -1420,6 +1604,248 @@ class ModernUI(QMainWindow):
 
         layout.addStretch()
         return tab
+
+    def create_text_tab(self):
+        """创建文字转换选项卡：顶部选转换类型与候选字显示，左侧输入、右侧输出"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(12)
+        layout.setContentsMargins(15, 15, 15, 15)
+
+        # 顶部选项：转换类型 + 是否显示候选字 + 转换按钮
+        options_group = QGroupBox("转换选项")
+        options_layout = QHBoxLayout(options_group)
+        options_layout.setSpacing(15)
+        options_layout.setContentsMargins(15, 12, 15, 12)
+
+        options_layout.addWidget(QLabel("转换类型:"))
+        self.text_type_combo = QComboBox()
+        for display_name in CONVERSION_TYPES:
+            self.text_type_combo.addItem(display_name)
+        options_layout.addWidget(self.text_type_combo, 1)
+
+        self.show_candidates_cb = QCheckBox("显示候选字（红色波浪线标注歧义）")
+        self.show_candidates_cb.setChecked(True)
+        self.show_candidates_cb.setToolTip(
+            "转换结果中的一对多歧义词以红色波浪线标注，\n点击波浪线可查看该词的全部候选转换值。"
+        )
+        self.show_candidates_cb.stateChanged.connect(self.on_show_candidates_changed)
+        options_layout.addWidget(self.show_candidates_cb)
+
+        self.text_convert_btn = QPushButton("转换")
+        self.text_convert_btn.setObjectName("startButton")
+        self.text_convert_btn.clicked.connect(self.on_text_convert)
+        options_layout.addWidget(self.text_convert_btn)
+
+        layout.addWidget(options_group)
+
+        # 中部：左输入、右输出（两侧均为纯文本、自动换行、同一字号，保证显示对齐）
+        panel_font = QFont(self.font())
+        panel_font.setPointSize(11)
+
+        panels_layout = QHBoxLayout()
+        panels_layout.setSpacing(12)
+
+        input_group = QGroupBox("输入文字")
+        input_layout = QVBoxLayout(input_group)
+        input_layout.setContentsMargins(10, 12, 10, 10)
+        self.text_input_edit = QTextEdit()
+        self.text_input_edit.setAcceptRichText(False)  # 粘贴/拖入一律按纯文本处理，清除来源格式
+        self.text_input_edit.setLineWrapMode(QTextEdit.WidgetWidth)
+        self.text_input_edit.setFont(panel_font)
+        self.text_input_edit.setPlaceholderText("输入文字，按 Ctrl+Enter 或点击“转换”开始…")
+        self.text_input_edit.textChanged.connect(self.on_text_input_changed)
+        for seq in (QKeySequence("Ctrl+Return"), QKeySequence("Ctrl+Enter")):
+            shortcut = QShortcut(seq, self.text_input_edit)
+            shortcut.activated.connect(self.on_text_convert)
+        input_layout.addWidget(self.text_input_edit)
+        panels_layout.addWidget(input_group, 1)
+
+        output_group = QGroupBox("转换结果")
+        output_layout = QVBoxLayout(output_group)
+        output_layout.setContentsMargins(10, 12, 10, 10)
+        self.text_output_edit = AmbiguityOutputEdit()
+        self.text_output_edit.setLineWrapMode(QTextEdit.WidgetWidth)
+        self.text_output_edit.setFont(panel_font)
+        self.text_output_edit.setPlaceholderText("转换结果显示在这里")
+        self.text_output_edit.ambiguity_clicked.connect(self.show_candidate_menu)
+        output_layout.addWidget(self.text_output_edit)
+        panels_layout.addWidget(output_group, 1)
+
+        layout.addLayout(panels_layout, 1)
+
+        # 底部：操作按钮与状态信息
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setSpacing(10)
+
+        self.text_copy_btn = QPushButton("复制结果")
+        self.text_copy_btn.setObjectName("browseButton")
+        self.text_copy_btn.clicked.connect(self.copy_text_result)
+        bottom_layout.addWidget(self.text_copy_btn)
+
+        self.text_clear_btn = QPushButton("清空")
+        self.text_clear_btn.setObjectName("browseButton")
+        self.text_clear_btn.clicked.connect(self.clear_text_tab)
+        bottom_layout.addWidget(self.text_clear_btn)
+
+        bottom_layout.addStretch()
+
+        self.text_status_label = QLabel("输入文字后点击“转换”")
+        self.text_status_label.setWordWrap(True)
+        bottom_layout.addWidget(self.text_status_label, 1)
+
+        layout.addLayout(bottom_layout)
+
+        # 文字转换运行期状态
+        self.text_worker = None
+        self._text_result = None  # 最近一次转换结果（切换“显示候选字”时用于重绘）
+        self._text_defs = []      # 最近一次转换的来源词列表（def 行）
+        self._text_config = None  # 最近一次转换使用的 OpenCC 配置
+
+        return tab
+
+    def on_text_input_changed(self):
+        """输入内容变化后，之前的转换结果与候选信息不再有效"""
+        if self._text_result is not None:
+            self._text_result = None
+            self._text_defs = []
+            self.text_output_edit.display_result("", [], False)
+            self.set_text_status("输入已修改，请重新转换")
+
+    def on_text_convert(self):
+        """执行文字转换（带一对多歧义标注）"""
+        if self.text_worker is not None and self.text_worker.isRunning():
+            self.set_text_status("正在转换中，请稍候…")
+            return
+
+        text = self.text_input_edit.toPlainText()
+        if not text.strip():
+            self.set_text_status("请先输入要转换的文字", error=True)
+            return
+        # 统一换行符，保证歧义跨度与 QTextEdit 中的显示位置一一对应
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+        # 转换类型：与文件转换一致，应用设置中的分词后缀
+        conversion_type = CONVERSION_TYPES[self.text_type_combo.currentText()]
+        if self.jieba_modern_cb.isChecked():
+            conversion_type += "_jieba"
+        elif self.jieba_ancient_cb.isChecked():
+            conversion_type += "_jieba_traditional"
+
+        # 自定义转换表：启用且应用于当前转换类型时，生成临时配置
+        custom_config_path = None
+        if self.custom_dict_cb.isChecked():
+            base_type = conversion_type
+            for suffix in ("_jieba_traditional", "_jieba"):
+                if base_type.endswith(suffix):
+                    base_type = base_type[:-len(suffix)]
+                    break
+            if base_type == self.custom_dict_type_combo.currentData():
+                try:
+                    custom_entries = parse_custom_entries(self.custom_dict_edit.toPlainText())
+                except ValueError as e:
+                    QMessageBox.warning(self, "自定义转换表格式错误", str(e))
+                    return
+                if not custom_entries:
+                    QMessageBox.warning(
+                        self, "自定义转换表",
+                        "未填写任何有效的自定义规则（示例行以 # 开头，需取消注释后生效；\n"
+                        "每一行一条：原词→目标词）"
+                    )
+                    return
+                try:
+                    custom_config_path = build_custom_config_file(conversion_type, custom_entries)
+                except Exception as e:
+                    QMessageBox.critical(self, "自定义转换表", f"生成自定义转换配置失败：{e}")
+                    return
+
+        config = custom_config_path if custom_config_path else conversion_type + ".json"
+
+        # 候选查询始终使用基础配置：def 来源词若被自定义转换表（单值）命中就不会
+        # 成为歧义词，因此基础配置下的候选与完整配置一致，且不受临时配置文件
+        # 生命周期影响
+        self._text_config = conversion_type + ".json"
+        self.text_convert_btn.setEnabled(False)
+        self.set_text_status("正在转换…")
+        self.text_worker = TextConversionWorker(text, config, custom_config_path)
+        self.text_worker.conversion_done.connect(self.on_text_convert_done)
+        self.text_worker.conversion_failed.connect(self.on_text_convert_failed)
+        self.text_worker.start()
+
+    def on_text_convert_done(self, result):
+        """文字转换完成，渲染结果与歧义标注"""
+        self.text_convert_btn.setEnabled(True)
+        self._text_result = result
+        self._text_defs = result["defs"]
+        mark = self.show_candidates_cb.isChecked()
+        self.text_output_edit.display_result(result["output"], result["spans"], mark)
+        message = f"转换完成：{len(result['output'])} 个字符"
+        if mark and result["spans"]:
+            message += f"，{len(result['spans'])} 处一对多歧义（点击红色波浪线查看候选）"
+        self.set_text_status(message)
+
+    def on_text_convert_failed(self, message):
+        """文字转换失败"""
+        self.text_convert_btn.setEnabled(True)
+        if "Segmentation plugin" in message and "not found" in message:
+            message = ("分词插件未安装，无法使用结巴分词转换（详见 README 安装说明）：\n" + message)
+        self.set_text_status(message, error=True)
+
+    def on_show_candidates_changed(self, state):
+        """切换“显示候选字”后按最近一次转换结果重绘"""
+        if self._text_result is not None:
+            mark = self.show_candidates_cb.isChecked()
+            self.text_output_edit.display_result(
+                self._text_result["output"], self._text_result["spans"], mark)
+
+    def set_text_status(self, message, error=False):
+        """更新文字转换页底部的状态信息"""
+        self.text_status_label.setText(message)
+        self.text_status_label.setStyleSheet("color: #e74c3c;" if error else "")
+
+    def show_candidate_menu(self, span_idx, global_pos):
+        """在歧义跨度处弹出候选字菜单"""
+        span = self.text_output_edit.spans()[span_idx]
+        if 0 <= span["def_idx"] < len(self._text_defs):
+            def_word = self._text_defs[span["def_idx"]]
+        else:
+            def_word = "?"
+
+        menu = QMenu(self)
+        header = QAction(f"原文：{def_word}", menu)
+        header.setEnabled(False)
+        menu.addAction(header)
+
+        candidates = query_candidates(self._text_config, def_word)
+        if candidates:
+            current = self.text_output_edit.span_text(span_idx)
+            for candidate in candidates:
+                action = menu.addAction(candidate + ("（当前）" if candidate == current else ""))
+                action.triggered.connect(
+                    lambda checked, c=candidate, i=span_idx:
+                        self.text_output_edit.apply_candidate(i, c))
+        else:
+            hint = menu.addAction("当前 OpenCC 暂不支持词级候选查询")
+            hint.setEnabled(False)
+
+        menu.exec(global_pos)
+
+    def copy_text_result(self):
+        """复制转换结果到剪贴板"""
+        text = self.text_output_edit.toPlainText()
+        if not text:
+            self.set_text_status("暂无转换结果可复制", error=True)
+            return
+        QApplication.clipboard().setText(text)
+        self.set_text_status("转换结果已复制到剪贴板")
+
+    def clear_text_tab(self):
+        """清空输入与输出"""
+        self.text_input_edit.clear()
+        self._text_result = None
+        self._text_defs = []
+        self.text_output_edit.display_result("", [], False)
+        self.set_text_status("已清空")
 
     # 检查更新方法
     def check_for_updates(self):
@@ -1673,6 +2099,11 @@ class ModernUI(QMainWindow):
         if hasattr(self, 'worker') and self.worker.isRunning():
             self.worker.cancel()
             self.worker.wait()
+
+        # 如果文字转换正在进行，先终止
+        if getattr(self, 'text_worker', None) is not None and self.text_worker.isRunning():
+            self.text_worker.cancel()
+            self.text_worker.wait()
 
         # 保存当前设置
         self.save_settings()
