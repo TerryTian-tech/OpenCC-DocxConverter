@@ -122,7 +122,9 @@ DEST="$(python3 -c "import opencc, os; print(os.path.join(os.path.dirname(opencc
 mkdir -p "$DEST" && cp -rf ../jieba/* "$DEST"
 python3 main.py
 ```
-结巴分词支持词典位于jieba目录下，其中现代汉语分词词典来自[结巴分词仓库](https://github.com/fxsjy/jieba)，古汉语分词默认词典使用了[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。如需结巴分词功能，请前往OpenCC官方仓库提取（[Windows](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.2/OpenCC-1.4.2-windows-x64-portable.zip)、[Linux](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.0/opencc-jieba_1.4.0_amd64.deb)）bin\plugins下的文件复制到你本地的OpenCC目录下（可运行 `pip show opencc` 命令查看OpenCC所在位置）。注意：Python包内的opencc命令行工具为静态构建，无法加载依赖opencc.dll的分词插件；若要在“文字转换”中使用结巴分词，需将动态库版原生构建的`opencc.exe`、`opencc.dll`与`plugins/opencc-jieba.dll`一并复制到opencc包的`clib/bin/`目录下。
+结巴分词支持词典位于jieba目录下，其中现代汉语分词词典来自[结巴分词仓库](https://github.com/fxsjy/jieba)，古汉语分词默认词典使用了[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。如需结巴分词功能，请前往OpenCC官方仓库提取（[Windows](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.2/OpenCC-1.4.2-windows-x64-portable.zip)、[Linux](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.0/opencc-jieba_1.4.0_amd64.deb)）bin\plugins下的文件复制到你本地的OpenCC目录下（可运行 `pip show opencc` 命令查看OpenCC所在位置）。
+
+注意：Python包内的opencc命令行工具为静态构建，无法加载依赖opencc.dll的分词插件；若要在“文字转换”中使用结巴分词，需将动态库版原生构建的`opencc.exe`、`opencc.dll`与`plugins/opencc-jieba.dll`一并复制到opencc包的`clib/bin/`目录下。此问题待OpenCC正式发布1.4.3后即可改善。
 
 ## 项目结构
 
