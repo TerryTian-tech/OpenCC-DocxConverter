@@ -118,12 +118,18 @@ def convert_with_ambiguities(text, config, timeout=60, on_spawn=None):
         )
 
     proc = None
+    popen_kwargs = {}
+    if os.name == "nt":
+        # 应用打包为无控制台的 GUI 程序后，须抑制子进程黑色控制台窗口闪现；
+        # 该标志不影响 stdin/stdout 管道通信
+        popen_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
     try:
         proc = subprocess.Popen(
             [cli, "-c", config, "--include-tofu-risk-dictionaries", "--ambiguities"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            **popen_kwargs
         )
         if on_spawn:
             on_spawn(proc)

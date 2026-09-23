@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/TerryTian-tech/OpenCC-DocxConverter?style=flat-square&color=bc8cff&labelColor=161b22)](https://github.com/TerryTian-tech/OpenCC-DocxConverter/stargazers)
 
-**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持 Word 文档（DOCX）、文本文件（TXT、MD）、电子书（EPUB）和字幕文件（SRT、ASS/SSA、LRC）的转换。此外，从 1.2.6 版本开始，有限支持 PDF 文件的转换。
+**简繁通转换大师**是一款功能完善的中文繁简转换软件，基于 [OpenCC](https://github.com/BYVoid/OpenCC) 开源项目开发，支持 Word 文档（DOCX）、文本文件（TXT、MD）、电子书（EPUB）和字幕文件（SRT、ASS/SSA、LRC）的转换。此外，有限支持 PDF 文件的转换。
 
 本工具不仅支持简体与繁体之间的相互转换，也支持陆、台、港三地的繁体标准互相转换，并提供词汇级别的智能转换能力，能够准确处理地域间的异体字和词汇差异。
 
@@ -71,6 +71,12 @@
 - ASS/SSA 字幕：保留样式标签 `{...}`，只转换显示文本
 - LRC 歌词：保留时间标签 `[mm:ss.xx]` 和增强型标签 `<xx>`
 
+**文字转换与一对多歧义标注：**
+- 内置“文字转换”页面，左侧输入、右侧输出，即时完成整段文字的繁简转换
+- 支持全部 19 种转换模式，与设置中的分词模式、自定义转换表联动
+- 转换结果中的一对多歧义词（如简体“干”可对应“乾/幹”）以红色波浪线标注
+- 点击波浪线可查看该词的全部候选转换值并一键替换
+
 **批量处理能力：**
 - 支持文件夹级别的批量转换
 - 自动识别文件夹内所有支持的文件格式
@@ -116,7 +122,7 @@ DEST="$(python3 -c "import opencc, os; print(os.path.join(os.path.dirname(opencc
 mkdir -p "$DEST" && cp -rf ../jieba/* "$DEST"
 python3 main.py
 ```
-结巴分词支持词典位于jieba目录下，其中现代汉语分词词典来自[结巴分词仓库](https://github.com/fxsjy/jieba)，古汉语分词默认词典使用了[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。如需结巴分词功能，请前往OpenCC官方仓库提取（[Windows](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.2/OpenCC-1.4.2-windows-x64-portable.zip)、[Linux](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.0/opencc-jieba_1.4.0_amd64.deb)）bin\plugins下的文件复制到你本地的OpenCC目录下（可运行 `pip show opencc` 命令查看OpenCC所在位置）。
+结巴分词支持词典位于jieba目录下，其中现代汉语分词词典来自[结巴分词仓库](https://github.com/fxsjy/jieba)，古汉语分词默认词典使用了[Dingyuan Wang](https://github.com/gumblex)制作的[jiebazhc](https://github.com/The-Orizon/nlputils)。如需结巴分词功能，请前往OpenCC官方仓库提取（[Windows](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.2/OpenCC-1.4.2-windows-x64-portable.zip)、[Linux](https://github.com/BYVoid/OpenCC/releases/download/ver.1.4.0/opencc-jieba_1.4.0_amd64.deb)）bin\plugins下的文件复制到你本地的OpenCC目录下（可运行 `pip show opencc` 命令查看OpenCC所在位置）。注意：Python包内的opencc命令行工具为静态构建，无法加载依赖opencc.dll的分词插件；若要在“文字转换”中使用结巴分词，需将动态库版原生构建的`opencc.exe`、`opencc.dll`与`plugins/opencc-jieba.dll`一并复制到opencc包的`clib/bin/`目录下。
 
 ## 项目结构
 
@@ -126,6 +132,7 @@ OpenCC-DocxConverter/
 │   ├── main.py               # 主程序入口，GUI界面与程序逻辑
 │   ├── doc_converter.py      # Word文档(DOCX)转换模块
 │   ├── text_converter.py     # 文本文件(TXT/SRT/ASS/SSA/LRC)转换模块
+│   ├── ambiguity_text.py     # 文字转换与一对多歧义标注模块（文字转换页）
 │   ├── epub_converter.py     # 电子书文件(EPUB)转换模块
 │   ├── pdf_converter.py      # PDF文件转换模块
 │   ├── custom_dict.py        # 自定义词典模块
@@ -150,7 +157,7 @@ OpenCC-DocxConverter/
 | [Beautifulsoup4](https://pypi.org/project/beautifulsoup4/) | 4.15.0 | HTML和XML文档解析库 |
 | [lxml](https://github.com/lxml/lxml) | 6.1.3 | 大型文档和XML处理库 |
 | [pdf-oxide](https://pypi.org/project/pdf-oxide/) | 0.3.78 | PDF 文件解析与重建库 |
-| [Pillow](https://python-pillow.github.io/) | 12.3.0 | 图像处理库（用于 PDF 扫描页栅格化保留） |
+| [Pillow](https://python-pillow.github.io/) | 12.3.0 | 图像处理库，用于 PDF 扫描页栅格化保留|
 | [OpenCC-Traditional Chinese to Traditional Chinese (The Chinese Government Standard)](https://github.com/TerryTian-tech/OpenCC-Traditional-Chinese-characters-according-to-Chinese-government-standards)| 1.4.2 | 《通用规范汉字表》标准转换词典|
 
 ## 隐私与安全
