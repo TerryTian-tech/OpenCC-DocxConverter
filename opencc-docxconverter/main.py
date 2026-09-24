@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import bisect
 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTextEdit, QPlainTextEdit, QFileDialog, QLabel,
@@ -10,7 +11,8 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtGui import (QIcon, QColor, QPalette, QTextCursor,
                            QKeySequence, QShortcut, QAction, QFont,
-                           QPainter, QPainterPath, QPen, QFontMetricsF)
+                           QPainter, QPainterPath, QPen, QFontMetricsF,
+                           QFontDatabase, QRawFont, QTextCharFormat)
 
 from opencc import OpenCC
 
@@ -48,6 +50,55 @@ CONVERSION_TYPES = {
     "简体到小篆（Unicode 18.0 篆书区块）": "s2seal",
     "小篆（Unicode 18.0 篆书区块）到繁体汉字": "seal2t"
 }
+
+# 小篆显示字体：AGPL 授权，不随本软件分发，需用户自行安装到系统
+SEAL_FONT_FAMILY = "Seal Sans"
+
+# 小篆相关 OpenCC 配置 -> 需要以小篆字体显示的面板
+SEAL_CONFIG_PANELS = {
+    "t2seal": "output",   # 繁体汉字 -> 小篆
+    "s2seal": "output",   # 简体 -> 小篆
+    "seal2t": "input",    # 小篆 -> 繁体汉字
+}
+
+
+def find_seal_font_family():
+    """返回系统已安装的 Seal Sans 字体族名；未安装时返回 None（大小写不敏感匹配）"""
+    for family in QFontDatabase.families():
+        if SEAL_FONT_FAMILY.lower() in family.lower():
+            return family
+    return None
+
+
+def seal_covered_mask(text, family):
+    """返回与 text 等长的布尔列表，标记各字符是否被该字体收录（用于小篆字符套格式）。
+
+    通过 QRawFont 批量查询字形索引，索引为 0（.notdef）即未收录。
+    查询失败时返回全 False，调用方将按普通文本处理。
+    """
+    try:
+        raw = QRawFont.fromFont(QFont(family))
+        gids = raw.glyphIndexesForString(text)
+        if len(gids) != len(text):
+            return [False] * len(text)
+        return [g != 0 for g in gids]
+    except Exception:
+        return [False] * len(text)
+
+
+def utf16_positions(text):
+    """返回数组 p，p[i] 为 text 前 i 个字符（code point 计）的 UTF-16 码元长度。
+
+    QTextDocument 的光标位置按 UTF-16 码元计，而转换结果的跨度索引按
+    code point 计；小篆字符位于扩展平面（每字 2 个码元），两套索引必须换算。
+    """
+    positions = [0] * (len(text) + 1)
+    u16 = 0
+    for i, ch in enumerate(text):
+        positions[i] = u16
+        u16 += 2 if ord(ch) > 0xFFFF else 1
+    positions[len(text)] = u16
+    return positions
 
 class ConversionWorker(QThread):
     """
@@ -529,17 +580,57 @@ class AmbiguityOutputEdit(QTextEdit):
     def __init__(self):
         super().__init__()
         self.setReadOnly(True)
-        self._spans = []  # [{"start", "length", "def_idx", "resolved"}]
+        self._spans = []  # [{"start", "length", "def_idx", "resolved"}]（code point 索引）
         self._mark_ambiguities = False
+        self._seal_format = None   # 小篆字符格式（None 表示普通显示）
+        self._u16_map = [0]        # code point 位置 -> UTF-16 码元位置
 
-    def display_result(self, text, spans, mark_ambiguities):
-        """显示转换结果；mark_ambiguities 为真时给歧义跨度加红色波浪线"""
+    def display_result(self, text, spans, mark_ambiguities, seal_format=None):
+        """显示转换结果；mark_ambiguities 为真时给歧义跨度加红色波浪线。
+
+        seal_format 不为 None 时，Seal Sans 已收录的字符用该格式渲染——
+        Qt 尚未收录 Unicode 18.0 篆书区块的覆盖数据，若仅设置面板字体，
+        文本分项会把小篆字符交给回退字体而显示为方框，故必须按字符显式指定。
+        """
         self._spans = [dict(span, resolved=False) for span in spans]
         self._mark_ambiguities = mark_ambiguities
+        self._seal_format = seal_format
         self.setPlainText(text)
+        self._rebuild_u16_map()
+        if seal_format is not None:
+            self._apply_seal_format(text)
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.Start)
         self.setTextCursor(cursor)
+
+    def _apply_seal_format(self, text):
+        """给 Seal Sans 已收录的连续字符段套小篆格式"""
+        mask = seal_covered_mask(text, self._seal_format.font().family())
+        cursor = QTextCursor(self.document())
+        i, n = 0, len(text)
+        while i < n:
+            if not mask[i]:
+                i += 1
+                continue
+            j = i + 1
+            while j < n and mask[j]:
+                j += 1
+            cursor.setPosition(self._u16_map[i])
+            cursor.setPosition(self._u16_map[j], QTextCursor.KeepAnchor)
+            cursor.setCharFormat(self._seal_format)
+            i = j
+
+    def _rebuild_u16_map(self):
+        """文本变化后重建 code point -> UTF-16 位置映射"""
+        self._u16_map = utf16_positions(self.toPlainText())
+
+    def _u16(self, cp_pos):
+        """code point 位置 -> QTextCursor 位置（UTF-16 码元）"""
+        return self._u16_map[cp_pos]
+
+    def _cp(self, u16_pos):
+        """QTextCursor 位置（UTF-16 码元）-> code point 位置"""
+        return bisect.bisect_right(self._u16_map, u16_pos) - 1
 
     def spans(self):
         return self._spans
@@ -550,7 +641,7 @@ class AmbiguityOutputEdit(QTextEdit):
 
     def _span_at(self, pos):
         """返回坐标 pos 处的歧义跨度序号；不在任何跨度内返回 None"""
-        position = self.cursorForPosition(pos).position()
+        position = self._cp(self.cursorForPosition(pos).position())
         for i, span in enumerate(self._spans):
             if span["start"] <= position < span["start"] + span["length"]:
                 return i
@@ -577,15 +668,16 @@ class AmbiguityOutputEdit(QTextEdit):
         """用选中的候选值替换对应歧义跨度的文本，并调整后续跨度偏移"""
         span = self._spans[span_idx]
         cursor = QTextCursor(self.document())
-        cursor.setPosition(span["start"])
-        cursor.setPosition(span["start"] + span["length"], QTextCursor.KeepAnchor)
+        cursor.setPosition(self._u16(span["start"]))
+        cursor.setPosition(self._u16(span["start"] + span["length"]), QTextCursor.KeepAnchor)
         cursor.removeSelectedText()
-        cursor.insertText(candidate)
+        cursor.insertText(candidate, self._seal_format or QTextCharFormat())
         delta = len(candidate) - span["length"]
         span["length"] = len(candidate)
         span["resolved"] = True
         for other in self._spans[span_idx + 1:]:
             other["start"] += delta
+        self._rebuild_u16_map()
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -597,25 +689,28 @@ class AmbiguityOutputEdit(QTextEdit):
         pen.setCapStyle(Qt.RoundCap)
         pen.setJoinStyle(Qt.RoundJoin)
         painter.setPen(pen)
-        metrics = QFontMetricsF(self.font())
         text = self.toPlainText()
         for span in self._spans:
             if span["resolved"]:
                 continue
-            self._draw_span_wave(painter, span, text, metrics)
+            self._draw_span_wave(painter, span, text)
         painter.end()
 
-    def _draw_span_wave(self, painter, span, text, metrics):
+    def _draw_span_wave(self, painter, span, text):
         """在跨度下方绘制波浪线；逐字符取位置，跨行（自动换行）时分行绘制"""
         viewport = self.viewport()
         visible_top, visible_bottom = -40, viewport.height() + 40
         run_x1 = run_x2 = run_y = None
         for pos in range(span["start"], span["start"] + span["length"]):
             cursor = QTextCursor(self.document())
-            cursor.setPosition(pos)
+            cursor.setPosition(self._u16(pos))
             rect = self.cursorRect(cursor)
             if run_y is not None and (rect.bottom() < visible_top or rect.top() > visible_bottom):
                 break
+            # 字符宽度按其实际渲染字体度量（小篆字符套用了 Seal Sans 格式）
+            fmt_font = cursor.charFormat().font()
+            metrics = (QFontMetricsF(fmt_font) if fmt_font.family()
+                       else QFontMetricsF(self.font()))
             char_width = metrics.horizontalAdvance(text[pos]) if pos < len(text) else rect.height()
             if run_y is not None and abs(rect.bottom() - run_y) <= 1:
                 # 同一行，延伸当前波浪段
@@ -1622,6 +1717,13 @@ class ModernUI(QMainWindow):
         self.text_type_combo = QComboBox()
         for display_name in CONVERSION_TYPES:
             self.text_type_combo.addItem(display_name)
+        # 小篆转换项提示：显示效果依赖系统安装的 Seal Sans 字体
+        seal_tip = ("小篆字符需要系统安装 “Seal Sans” 字体才能正常显示。\n"
+                    "该字体为 AGPL 授权，不随本软件分发，需自行安装；未安装时字符可能显示为方框。")
+        for i in range(self.text_type_combo.count()):
+            if "小篆" in self.text_type_combo.itemText(i):
+                self.text_type_combo.setItemData(i, seal_tip, Qt.ToolTipRole)
+        self.text_type_combo.currentTextChanged.connect(self.on_text_type_changed)
         options_layout.addWidget(self.text_type_combo, 1)
 
         self.show_candidates_cb = QCheckBox("显示候选字（红色波浪线标注歧义）")
@@ -1639,9 +1741,11 @@ class ModernUI(QMainWindow):
 
         layout.addWidget(options_group)
 
-        # 中部：左输入、右输出（两侧均为纯文本、自动换行、同一字号，保证显示对齐）
+        # 中部：左输入、右输出（两侧均为纯文本、自动换行、同一字号，保证显示对齐；
+        # 小篆配置时对应侧的字符用系统 Seal Sans 字体渲染，见 _seal_char_format）
         panel_font = QFont(self.font())
         panel_font.setPointSize(11)
+        self._panel_font = panel_font  # 面板基准字体（字号来源）
 
         panels_layout = QHBoxLayout()
         panels_layout.setSpacing(12)
@@ -1701,8 +1805,62 @@ class ModernUI(QMainWindow):
         self._text_result = None  # 最近一次转换结果（切换“显示候选字”时用于重绘）
         self._text_defs = []      # 最近一次转换的来源词列表（def 行）
         self._text_config = None  # 最近一次转换使用的 OpenCC 配置
+        self._text_seal_format = None  # 最近一次转换结果的小篆字符格式
+
+        # 按初始转换类型套用输入面板的小篆字符格式
+        self.apply_text_panel_fonts()
 
         return tab
+
+    def _seal_panel_for_config(self, config_name):
+        """返回配置名对应的小篆显示面板（"input"/"output"）；非小篆配置返回 None。
+
+        config_name 可为带 jieba 分词后缀和 .json 扩展名的完整配置名。
+        """
+        base = config_name[:-len(".json")] if config_name.endswith(".json") else config_name
+        for suffix in ("_jieba_traditional", "_jieba"):
+            if base.endswith(suffix):
+                base = base[:-len(suffix)]
+                break
+        return SEAL_CONFIG_PANELS.get(base)
+
+    def _seal_char_format(self, family):
+        """构造小篆字符格式：显式指定字体并禁用字体合并。
+
+        Qt 内置的字符覆盖数据尚未收录 Unicode 18.0 篆书区块，即使把面板字体
+        设为 Seal Sans，文本分项仍会把小篆字符判定为缺字、交给回退字体而
+        显示为方框；必须按字符显式指定字体并配合 NoFontMerging 才能生效。
+        """
+        font = QFont(family)
+        font.setPointSize(self._panel_font.pointSize())
+        font.setStyleStrategy(QFont.StyleStrategy.NoFontMerging)
+        fmt = QTextCharFormat()
+        fmt.setFont(font)
+        return fmt
+
+    def apply_text_panel_fonts(self):
+        """按当前转换类型刷新面板的小篆显示设置。
+
+        输入面板（seal2t 配置）：当前字符格式设为 Seal Sans，之后粘贴/输入
+        的小篆文字即以该字体显示。输出面板的格式在每次转换完成后由
+        on_text_convert_done 按字符套用（见 AmbiguityOutputEdit.display_result）。
+        """
+        seal_family = find_seal_font_family()
+        seal_panel = self._seal_panel_for_config(
+            CONVERSION_TYPES.get(self.text_type_combo.currentText(), ""))
+        if seal_panel == "input" and seal_family:
+            self.text_input_edit.setCurrentCharFormat(self._seal_char_format(seal_family))
+        else:
+            self.text_input_edit.setCurrentCharFormat(QTextCharFormat())
+
+    def on_text_type_changed(self, _text=None):
+        """切换转换类型：刷新小篆显示设置；小篆配置在缺少字体时提示手动安装"""
+        self.apply_text_panel_fonts()
+        config = CONVERSION_TYPES.get(self.text_type_combo.currentText(), "")
+        if self._seal_panel_for_config(config) and not find_seal_font_family():
+            self.set_text_status(
+                "未检测到系统字体 “Seal Sans”：小篆字符可能显示为方框。\n"
+                "该字体为 AGPL 授权，不随本软件分发，请自行安装后重启本软件。", error=True)
 
     def on_text_input_changed(self):
         """输入内容变化后，之前的转换结果与候选信息不再有效"""
@@ -1778,10 +1936,19 @@ class ModernUI(QMainWindow):
         self._text_result = result
         self._text_defs = result["defs"]
         mark = self.show_candidates_cb.isChecked()
-        self.text_output_edit.display_result(result["output"], result["spans"], mark)
+        seal_format = None
+        if self._seal_panel_for_config(self._text_config) == "output":
+            seal_family = find_seal_font_family()
+            if seal_family:
+                seal_format = self._seal_char_format(seal_family)
+        self._text_seal_format = seal_format
+        self.text_output_edit.display_result(
+            result["output"], result["spans"], mark, seal_format)
         message = f"转换完成：{len(result['output'])} 个字符"
         if mark and result["spans"]:
             message += f"，{len(result['spans'])} 处一对多歧义（点击红色波浪线查看候选）"
+        if self._seal_panel_for_config(self._text_config) and not find_seal_font_family():
+            message += "；未安装 “Seal Sans” 字体，小篆字符可能显示为方框"
         self.set_text_status(message)
 
     def on_text_convert_failed(self, message):
@@ -1796,7 +1963,8 @@ class ModernUI(QMainWindow):
         if self._text_result is not None:
             mark = self.show_candidates_cb.isChecked()
             self.text_output_edit.display_result(
-                self._text_result["output"], self._text_result["spans"], mark)
+                self._text_result["output"], self._text_result["spans"], mark,
+                self._text_seal_format)
 
     def set_text_status(self, message, error=False):
         """更新文字转换页底部的状态信息"""
