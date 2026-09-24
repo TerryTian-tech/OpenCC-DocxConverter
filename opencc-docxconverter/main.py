@@ -757,7 +757,7 @@ class ModernUI(QMainWindow):
 
     def init_ui(self):
         # 设置窗口属性
-        self.setWindowTitle("OpenCC File Converter")
+        self.setWindowTitle("Oh My OpenCC")
         self.setGeometry(100, 100, 1050, 750)
         self.setMinimumSize(900, 650)
 
