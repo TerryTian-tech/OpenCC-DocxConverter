@@ -1980,15 +1980,50 @@ class ModernUI(QMainWindow):
             def_word = "?"
 
         menu = QMenu(self)
-        header = QAction(f"原文：{def_word}", menu)
-        header.setEnabled(False)
-        menu.addAction(header)
+
+        # 小篆配置下来源词/候选值可能位于篆书区块，QMenu 默认字体会把这些
+        # 字符渲染为方框（Qt 尚未收录 Unicode 18.0 区块的覆盖数据）。仅当
+        # 菜单项文本被 Seal Sans 全部收录时才改用该字体并禁用字体合并；
+        # “（当前）”标记相应改为菜单勾选（样式绘制，不混入文本），来源词
+        # 为小篆时表头拆成两行，避免“原文：”等缺字字符与篆书混排。
+        seal_family = None
+        if self._seal_panel_for_config(self._text_config) is not None:
+            seal_family = find_seal_font_family()
+
+        def seal_font_for(text):
+            if not seal_family:
+                return None
+            if not text or not all(seal_covered_mask(text, seal_family)):
+                return None
+            font = QFont(menu.font())
+            font.setFamily(seal_family)
+            font.setStyleStrategy(QFont.StyleStrategy.NoFontMerging)
+            return font
+
+        def_word_font = seal_font_for(def_word)
+        if def_word_font is not None:
+            header = QAction("原文：", menu)
+            header.setEnabled(False)
+            menu.addAction(header)
+            word_action = QAction(def_word, menu)
+            word_action.setFont(def_word_font)
+            word_action.setEnabled(False)
+            menu.addAction(word_action)
+        else:
+            header = QAction(f"原文：{def_word}", menu)
+            header.setEnabled(False)
+            menu.addAction(header)
 
         candidates = query_candidates(self._text_config, def_word)
         if candidates:
             current = self.text_output_edit.span_text(span_idx)
             for candidate in candidates:
-                action = menu.addAction(candidate + ("（当前）" if candidate == current else ""))
+                action = menu.addAction(candidate)
+                font = seal_font_for(candidate)
+                if font is not None:
+                    action.setFont(font)
+                action.setCheckable(True)
+                action.setChecked(candidate == current)
                 action.triggered.connect(
                     lambda checked, c=candidate, i=span_idx:
                         self.text_output_edit.apply_candidate(i, c))
