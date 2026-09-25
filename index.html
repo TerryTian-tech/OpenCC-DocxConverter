@@ -98,7 +98,7 @@
             font-weight: 700;
         }
 
-        .logo-text span {
+        .logo-text span + span {
             color: var(--primary);
         }
 
@@ -1084,7 +1084,7 @@
                 <div class="logo-icon">
                     <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
                 </div>
-                <span class="logo-text">简繁通<span>转换大师</span></span>
+                <span class="logo-text"><span data-lang="brand-1">简繁通</span><span data-lang="brand-2">转换大师</span></span>
             </a>
             <nav class="nav">
                 <a href="#features" data-lang="nav-features">核心特性</a>
@@ -1114,11 +1114,11 @@
                     <span data-lang="hero-badge">开源免费 · 本地处理</span>
                 </div>
                 <h1>
-                    精准高效的<br>
-                    <span class="highlight">中文繁简转换</span>工具
+                    <span data-lang="hero-title-1">精准高效的</span><br>
+                    <span class="highlight" data-lang="hero-title-2">中文繁简转换</span><span data-lang="hero-title-3">工具</span>
                 </h1>
                 <p class="hero-subtitle" data-lang="hero-subtitle">
-                    基于 OpenCC 开发的强大转换工具，支持 Word 文档、文本文件、PDF、EPUB电子书和字幕文件等多种格式。21种转换模式，完整保留文档格式，本地处理保护隐私。
+                    基于 OpenCC 开发的强大转换工具，支持 Word 文档、文本文件、电子书（PDF、EPUB）和字幕文件等多种格式。22种转换模式，完整保留文档格式，本地处理保护隐私。
                 </p>
                 <div class="hero-cta">
                     <a href="#download" class="btn-primary">
@@ -1129,9 +1129,7 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                         <span data-lang="view-source">查看源码</span>
                     </a>
-                <p>
-                    交流繁简转换相关问题可进QQ群：1055649831
-                </p>
+                <p data-lang="qq-group">交流繁简转换相关问题可进QQ群：1055649831</p>
                 </div>
             </div>
             <div class="hero-visual">
@@ -1155,6 +1153,7 @@
                             <span class="format-tag">SRT</span>
                             <span class="format-tag">ASS</span>
                             <span class="format-tag">LRC</span>
+                            <span class="format-tag">PDF</span>
                         </div>
                     </div>
                 </div>
@@ -1188,7 +1187,7 @@
                 <div class="feature-icon purple">
                     <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm2-4h12v2H6zm14 8H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
                 </div>
-                <h3 class="feature-title" data-lang="feature3-title">21种转换模式</h3>
+                <h3 class="feature-title" data-lang="feature3-title">22种转换模式</h3>
                 <p class="feature-desc" data-lang="feature3-desc">内置《通用规范汉字表》繁体、台湾正体、香港繁体等多种转换标准，满足不同地区和场景的转换需求。</p>
             </div>
             <div class="feature-card large">
@@ -1219,35 +1218,35 @@
             <div class="formats-grid">
                 <div class="format-card">
                     <div class="format-icon docx">DOCX</div>
-                    <h3 class="format-name">Word 文档</h3>
+                    <h3 class="format-name" data-lang="format-name-docx">Word 文档</h3>
                     <p class="format-desc" data-lang="format-docx">保留原有格式、排版，可选择是否转换页眉页脚、脚注尾注</p>
                 </div>
                 <div class="format-card">
                     <div class="format-icon txt">TXT</div>
-                    <h3 class="format-name">文本文件</h3>
+                    <h3 class="format-name" data-lang="format-name-txt">文本文件</h3>
                     <p class="format-desc" data-lang="format-txt">自动检测编码并转换为 UTF-8</p>
                 </div>
                 <div class="format-card">
                     <div class="format-icon epub">EPUB</div>
-                    <h3 class="format-name">电子出版</h3>
+                    <h3 class="format-name" data-lang="format-name-epub">电子出版</h3>
                     <p class="format-desc" data-lang="format-epub">转换所有纯文本内容</p>
                 </div>
                 <div class="format-card">
                     <div class="format-icon ass">ASS</div>
-                    <h3 class="format-name">高级字幕</h3>
+                    <h3 class="format-name" data-lang="format-name-ass">高级字幕</h3>
                     <p class="format-desc" data-lang="format-ass">保留样式定义，仅转换对话文本</p>
                 </div>
             </div>
             <div class="modes-section">
-                <h3 class="modes-title" data-lang="modes-title">21 种转换模式</h3>
+                <h3 class="modes-title" data-lang="modes-title">22 种转换模式</h3>
                 <div class="modes-grid">
                     <div class="mode-item">
                         <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
-                        <span class="mode-name" data-lang="mode1">简体 → 繁体（OpenCC）</span>
+                        <span class="mode-name" data-lang="mode1">简体 → 繁体（OpenCC 标准）</span>
                     </div>
                     <div class="mode-item">
                         <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
-                        <span class="mode-name" data-lang="mode2">繁体 → 简体（OpenCC）</span>
+                        <span class="mode-name" data-lang="mode2">繁体 → 简体（OpenCC 标准）</span>
                     </div>
                     <div class="mode-item">
                         <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
@@ -1267,15 +1266,39 @@
                     </div>
                     <div class="mode-item">
                         <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
-                        <span class="mode-name" data-lang="mode7">简体 ↔ 繁体（《通用规范汉字表》）</span>
+                        <span class="mode-name" data-lang="mode7">简体 ↔ 繁体（《通用规范汉字表》标准）</span>
                     </div>
                     <div class="mode-item">
                         <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
-                        <span class="mode-name" data-lang="mode8">简体 → 繁体（台湾词汇）</span>
+                        <span class="mode-name" data-lang="mode8">繁体 → 繁体（《通用规范汉字表》标准）</span>
                     </div>
                     <div class="mode-item">
                         <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
-                        <span class="mode-name" data-lang="mode9">繁体 → 简体（中国大陆词汇）</span>
+                        <span class="mode-name" data-lang="mode9">简体 → 繁体（台湾标准）并转换为台湾常用词汇</span>
+                    </div>
+                    <div class="mode-item">
+                        <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                        <span class="mode-name" data-lang="mode10">繁体（台湾标准）→ 简体并转换为大陆常用词汇</span>
+                    </div>
+                    <div class="mode-item">
+                        <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                        <span class="mode-name" data-lang="mode11">简体 → 繁体（香港标准）并转换为香港常用词汇</span>
+                    </div>
+                    <div class="mode-item">
+                        <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                        <span class="mode-name" data-lang="mode12">繁体（香港标准）→ 简体并转换为大陆常用词汇</span>
+                    </div>
+                    <div class="mode-item">
+                        <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                        <span class="mode-name" data-lang="mode13">繁体（OpenCC 标准，旧字体）↔ 日文新字体</span>
+                    </div>
+                    <div class="mode-item">
+                        <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                        <span class="mode-name" data-lang="mode14">繁体汉字 ↔ 小篆（Unicode 18.0）</span>
+                    </div>
+                    <div class="mode-item">
+                        <span class="mode-check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                        <span class="mode-name" data-lang="mode15">简体汉字 → 小篆（Unicode 18.0）</span>
                     </div>
                 </div>
             </div>
@@ -1322,7 +1345,7 @@
             <div class="download-card">
                 <div class="download-version">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    <span data-lang="latest-version">最新版本 v1.2.6</span>
+                    <span data-lang="latest-version">最新版本 v1.2.7</span>
                 </div>
                 <h2 data-lang="download-title">立即下载使用</h2>
                 <p class="download-desc" data-lang="download-desc">Windows 10/11 用户直接下载，解压运行即可使用，无需安装</p>
@@ -1335,9 +1358,7 @@
                         <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                         <span data-lang="view-source-btn">查看源码</span>
                     </a>
-                <p>
-                    交流繁简转换相关问题可进QQ群：1055649831
-                </p>
+                <p data-lang="qq-group">交流繁简转换相关问题可进QQ群：1055649831</p>
                 </div>
                 <div class="download-meta">
                     <div class="meta-item">
@@ -1365,7 +1386,7 @@
                     <div class="footer-logo-icon">
                         <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
                     </div>
-                    <span class="footer-logo-text">简繁通转换大师</span>
+                    <span class="footer-logo-text" data-lang="brand-full">简繁通转换大师</span>
                 </a>
                 <p class="footer-copy">© 2026 OpenCC File Converter. Apache-2.0 License.</p>
             </div>
@@ -1386,9 +1407,21 @@
                 'nav-scenarios': '使用场景',
                 'nav-download': '下载',
                 'hero-badge': '开源免费 · 本地处理',
-                'hero-subtitle': '基于 OpenCC 开发的强大转换工具，支持 Word 文档、文本文件、PDF、EPUB电子书和字幕文件等多种格式。21种转换模式，完整保留文档格式，本地处理保护隐私。',
+                'hero-subtitle': '基于 OpenCC 开发的强大转换工具，支持 Word 文档、文本文件、电子书（PDF、EPUB）和字幕文件等多种格式。22种转换模式，完整保留文档格式，本地处理保护隐私。',
                 'download-windows': '下载 Windows 版',
                 'view-source': '查看源码',
+                'page-title': '简繁通转换大师 - OpenCC File Converter | 精准高效的中文繁简转换工具',
+                'brand-1': '简繁通',
+                'brand-2': '转换大师',
+                'brand-full': '简繁通转换大师',
+                'hero-title-1': '精准高效的',
+                'hero-title-2': '中文繁简转换',
+                'hero-title-3': '工具',
+                'qq-group': '交流繁简转换相关问题可进QQ群：1055649831',
+                'format-name-docx': 'Word 文档',
+                'format-name-txt': '文本文件',
+                'format-name-epub': '电子出版',
+                'format-name-ass': '高级字幕',
                 'features-label': '核心特性',
                 'features-title': '为什么选择简繁通？',
                 'features-desc': '强大功能，简洁体验，为您解决所有繁简转换需求',
@@ -1396,7 +1429,7 @@
                 'feature1-desc': 'DOCX 文档转换后完整保留原有格式，支持字体、颜色、大小、粗体、斜体、下划线等格式属性，页眉页脚、表格等复杂元素也能完美处理。',
                 'feature2-title': '本地处理 · 隐私保护',
                 'feature2-desc': '所有文件转换均在本地完成，不会上传至任何服务器。核心功能完全离线可用，保障您的数据安全。',
-                'feature3-title': '21种转换模式',
+                'feature3-title': '22种转换模式',
                 'feature3-desc': '内置《通用规范汉字表》繁体、台湾正体、香港繁体等多种转换标准，满足不同地区和场景的转换需求。',
                 'feature4-title': '智能编码检测',
                 'feature4-desc': '采用 Chardet 库自动识别文件编码，完美支持 GB2312、GBK、GB18030 等中文编码，无需手动设置。',
@@ -1409,16 +1442,22 @@
                 'format-txt': '自动检测编码并转换为 UTF-8',
                 'format-epub': '转换所有纯文本内容',
                 'format-ass': '保留样式定义，仅转换对话文本',
-                'modes-title': '21 种转换模式',
-                'mode1': '简体 → 繁体（OpenCC）',
-                'mode2': '繁体 → 简体（OpenCC）',
+                'modes-title': '22 种转换模式',
+                'mode1': '简体 → 繁体（OpenCC 标准）',
+                'mode2': '繁体 → 简体（OpenCC 标准）',
                 'mode3': '简体 ↔ 台湾正体',
                 'mode4': '简体 ↔ 香港繁体',
                 'mode5': '繁体 ↔ 台湾正体',
                 'mode6': '繁体 ↔ 香港繁体',
-                'mode7': '简体 ↔ 繁体（《通用规范汉字表》）',
-                'mode8': '简体 → 繁体（台湾词汇）',
-                'mode9': '繁体 → 简体（中国大陆词汇）',
+                'mode7': '简体 ↔ 繁体（《通用规范汉字表》标准）',
+                'mode8': '繁体 → 繁体（《通用规范汉字表》标准）',
+                'mode9': '简体 → 繁体（台湾标准）并转换为台湾常用词汇',
+                'mode10': '繁体（台湾标准）→ 简体并转换为大陆常用词汇',
+                'mode11': '简体 → 繁体（香港标准）并转换为香港常用词汇',
+                'mode12': '繁体（香港标准）→ 简体并转换为大陆常用词汇',
+                'mode13': '繁体（OpenCC 标准，旧字体）↔ 日文新字体',
+                'mode14': '繁体汉字 ↔ 小篆（Unicode 18.0）',
+                'mode15': '简体汉字 → 小篆（Unicode 18.0）',
                 'scenarios-label': '使用场景',
                 'scenarios-title': '广泛应用于各行各业',
                 'scenarios-desc': '满足不同用户的繁简转换需求',
@@ -1428,7 +1467,7 @@
                 'scenario2-desc': '为影视作品、综艺节目制作双语字幕，智能保留时间码和样式标签，转换高效准确。',
                 'scenario3-title': '电子书制作',
                 'scenario3-desc': '转换电子书、网络小说、漫画文字等内容，支持多种文本格式批量处理。',
-                'latest-version': '最新版本 v1.2.6',
+                'latest-version': '最新版本 v1.2.7',
                 'download-title': '立即下载使用',
                 'download-desc': 'Windows 10/11 用户直接下载，解压运行即可使用，无需安装',
                 'download-btn': '下载 Windows 版',
@@ -1443,9 +1482,21 @@
                 'nav-scenarios': '使用場景',
                 'nav-download': '下載',
                 'hero-badge': '開源免費 · 本地處理',
-                'hero-subtitle': '基於 OpenCC 開發的強大轉換工具，支援 Word 文檔、文字檔案、PDF、EPUB電子書和字幕檔案等多種格式。21種轉換模式，完整保留文檔格式，本地處理保護隱私。',
+                'hero-subtitle': '基於 OpenCC 開發的強大轉換工具，支援 Word 文檔、文字檔案、電子書（PDF、EPUB）和字幕檔案等多種格式。22種轉換模式，完整保留文檔格式，本地處理保護隱私。',
                 'download-windows': '下載 Windows 版',
                 'view-source': '檢視原始碼',
+                'page-title': '簡繁通轉換大師 - OpenCC File Converter | 精準高效的中文繁簡轉換工具',
+                'brand-1': '簡繁通',
+                'brand-2': '轉換大師',
+                'brand-full': '簡繁通轉換大師',
+                'hero-title-1': '精準高效的',
+                'hero-title-2': '中文繁簡轉換',
+                'hero-title-3': '工具',
+                'qq-group': '交流繁簡轉換相關問題可進QQ群：1055649831',
+                'format-name-docx': 'Word 文檔',
+                'format-name-txt': '文字檔案',
+                'format-name-epub': '電子出版',
+                'format-name-ass': '高級字幕',
                 'features-label': '核心特性',
                 'features-title': '為什麼選擇簡繁通？',
                 'features-desc': '強大功能，簡潔體驗，為您解決所有繁簡轉換需求',
@@ -1453,7 +1504,7 @@
                 'feature1-desc': 'DOCX 文檔轉換後完整保留原有格式，支援字體、顏色、大小、粗體、斜體、底線等格式屬性，頁眉頁腳、表格等複雜元素也能完美處理。',
                 'feature2-title': '本地處理 · 隱私保護',
                 'feature2-desc': '所有檔案轉換均在本地完成，不會上傳至任何伺服器。核心功能完全離線可用，保障您的資料安全。',
-                'feature3-title': '21種轉換模式',
+                'feature3-title': '22種轉換模式',
                 'feature3-desc': '內建《通用規範漢字表》繁體、台灣正體、香港繁體等多種轉換標準，滿足不同地區和場景的轉換需求。',
                 'feature4-title': '智慧編碼檢測',
                 'feature4-desc': '採用 Chardet 庫自動識別檔案編碼，完美支援 GB2312、GBK、GB18030 等中文編碼，無需手動設定。',
@@ -1466,16 +1517,22 @@
                 'format-txt': '自動檢測編碼並轉換為 UTF-8',
                 'format-epub': '轉換所有純文本內容',
                 'format-ass': '保留樣式定義，僅轉換對話文字',
-                'modes-title': '21 種轉換模式',
-                'mode1': '簡體 → 繁體（OpenCC）',
-                'mode2': '繁體 → 簡體（OpenCC）',
+                'modes-title': '22 種轉換模式',
+                'mode1': '簡體 → 繁體（OpenCC 標準）',
+                'mode2': '繁體 → 簡體（OpenCC 標準）',
                 'mode3': '簡體 ↔ 台灣正體',
                 'mode4': '簡體 ↔ 香港繁體',
                 'mode5': '繁體 ↔ 台灣正體',
                 'mode6': '繁體 ↔ 香港繁體',
-                'mode7': '簡體 ↔ 繁體（《通用規範漢字表》）',
-                'mode8': '簡體 → 繁體（台灣詞彙）',
-                'mode9': '繁體 → 簡體（中國大陸詞彙）',
+                'mode7': '簡體 ↔ 繁體（《通用規範漢字表》標準）',
+                'mode8': '繁體 → 繁體（《通用規範漢字表》標準）',
+                'mode9': '簡體 → 繁體（台灣標準）並轉換為台灣常用詞彙',
+                'mode10': '繁體（台灣標準）→ 簡體並轉換為大陸常用詞彙',
+                'mode11': '簡體 → 繁體（香港標準）並轉換為香港常用詞彙',
+                'mode12': '繁體（香港標準）→ 簡體並轉換為大陸常用詞彙',
+                'mode13': '繁體（OpenCC 標準，舊字體）↔ 日文新字體',
+                'mode14': '繁體漢字 ↔ 小篆（Unicode 18.0）',
+                'mode15': '簡體漢字 → 小篆（Unicode 18.0）',
                 'scenarios-label': '使用場景',
                 'scenarios-title': '廣泛應用於各行各業',
                 'scenarios-desc': '滿足不同使用者的繁簡轉換需求',
@@ -1485,7 +1542,7 @@
                 'scenario2-desc': '為影視作品、綜藝節目製作雙語字幕，智慧保留時間碼和樣式標籤，轉換高效準確。',
                 'scenario3-title': '電子書製作',
                 'scenario3-desc': '轉換電子書、網路小說、漫畫文字等內容，支援多種文字格式批次處理。',
-                'latest-version': '最新版本 v1.2.6',
+                'latest-version': '最新版本 v1.2.7',
                 'download-title': '立即下載使用',
                 'download-desc': 'Windows 10/11 用戶直接下載，解壓運行即可使用，無需安裝。',
                 'download-btn': '下載 Windows 版',
@@ -1516,8 +1573,11 @@
                     }
                 });
 
-                // Update HTML lang attribute
+                // Update HTML lang attribute and page title
                 document.documentElement.lang = lang;
+                if (translations[lang]['page-title']) {
+                    document.title = translations[lang]['page-title'];
+                }
             });
         });
 
